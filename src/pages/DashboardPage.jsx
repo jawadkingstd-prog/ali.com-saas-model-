@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import logoCyan from '../assets/Logo_Cyan1.png';
 import { 
   TrendingUp, ArrowUpRight, DollarSign, Users, Award, LayoutGrid, 
   Calendar, Filter, Bell, ChevronDown, User, Settings, LogOut, 
@@ -421,12 +422,15 @@ export default function DashboardPage() {
       <aside className="hidden lg:flex flex-col w-64 bg-[#111C2E] border-r border-[#28415F] p-6 justify-between shrink-0">
         <div className="space-y-8">
           {/* Main Logo component link stack */}
-          <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => setActiveMenu('Dashboard')}>
-            <div className="h-9 w-9 rounded-xl bg-[#4EA5FF] flex items-center justify-center text-[#090E17] shadow-lg shadow-[#4EA5FF]/20 group-hover:scale-105 transition-transform duration-300">
-              <Compass size={20} />
-            </div>
-            <span className="font-extrabold text-lg text-white tracking-tight group-hover:text-[#4EA5FF] transition-colors">Ali.com Pro</span>
-          </div>
+         <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setActiveMenu('Dashboard')}>
+  <img 
+    src={logoCyan} 
+    alt="Ali.com Logo" 
+    className="h-10 w-10 object-contain group-hover:scale-105 transition-transform duration-300" 
+    onError={(e) => { console.error("Logo failed to load:", e.target.src); }}
+  />
+  <span className="font-extrabold text-lg text-white tracking-tight group-hover:text-[#4EA5FF] transition-colors">Ali.com Pro</span>
+</div>
 
           {/* Navigation link arrays map blocks */}
           <div className="space-y-6">

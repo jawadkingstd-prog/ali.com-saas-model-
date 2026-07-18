@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import logoCyan from '../assets/Logo_Cyan1.png';
 import { 
   TrendingUp, ArrowUpRight, DollarSign, Users, Award, LayoutGrid, 
   Calendar, Filter, Bell, ChevronDown, User, Settings, LogOut, 
@@ -8,9 +7,18 @@ import {
   RefreshCw, Download, SlidersHorizontal, Layers, Globe
 } from 'lucide-react';
 
-export default function DashboardPage() {
-  // Page Routing State
-  const [activeMenu, setActiveMenu] = useState('Dashboard');
+export default function DashboardPage({ activeMenu: activeMenuProp, onNavigate, onLogout }) {
+  // Page Routing State — uses the prop from App.jsx if provided (so the
+  // parent sidebar controls the view), falls back to internal state otherwise
+  const [internalActiveMenu, setActiveMenu] = useState('Dashboard');
+  const activeMenu = activeMenuProp || internalActiveMenu;
+
+  // Navigate either through the parent (preferred, keeps App.jsx in sync)
+  // or fall back to local state if this component is used standalone.
+  const goTo = (menuName) => {
+    if (onNavigate) onNavigate(menuName);
+    else setActiveMenu(menuName);
+  };
 
   // Interactive Dropdown States
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -18,6 +26,14 @@ export default function DashboardPage() {
 
   // Table Filter State
   const [statusFilter, setStatusFilter] = useState('all');
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+
+  const filterOptions = [
+    { value: 'all', label: 'All Ledgers Log' },
+    { value: 'Completed', label: 'Completed Only' },
+    { value: 'Pending', label: 'Pending Alerts' },
+  ];
+  const activeFilterLabel = filterOptions.find(f => f.value === statusFilter)?.label ?? 'All Ledgers Log';
 
   // Settings Mock Toggles States
   const [emailAlerts, setEmailAlerts] = useState(true);
@@ -76,12 +92,17 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               <div className="bg-[#111C2E] border border-[#28415F] rounded-2xl p-6 relative overflow-hidden group hover:-translate-y-1 hover:border-[#4EA5FF] hover:shadow-lg hover:shadow-[#4EA5FF]/5 transition-all duration-300">
                 <div className="flex items-center justify-between relative z-10">
-                  <span className="text-[11px] font-bold text-[#9FB6D4] uppercase tracking-wider">Total Gross Revenue</span>
-                  <span className="text-xs font-bold text-[#36D399] bg-[#36D399]/10 px-2.5 py-1 rounded-xl flex items-center gap-1 shadow-sm">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-8 w-8 rounded-xl bg-[#36D399]/10 border border-[#36D399]/20 flex items-center justify-center text-[#36D399] shrink-0">
+                      <DollarSign size={15} />
+                    </div>
+                    <span className="text-[11px] font-bold text-[#9FB6D4] uppercase tracking-wider">Total Gross Revenue</span>
+                  </div>
+                  <span className="text-xs font-bold text-[#36D399] bg-[#36D399]/10 px-2.5 py-1 rounded-xl flex items-center gap-1 shadow-sm shrink-0">
                     +18.4% <ArrowUpRight size={12} />
                   </span>
                 </div>
-                <h2 className="text-3xl font-black text-white mt-4 font-mono tracking-tight relative z-10">PKR 482,900</h2>
+                <h2 className="text-xl sm:text-2xl font-black text-white mt-4 font-mono tracking-tight relative z-10 truncate">PKR 482,900</h2>
                 
                 {/* Embedded Mini-Sparkline Graph Overlay */}
                 <div className="absolute bottom-0 left-0 right-0 h-10 opacity-30 group-hover:opacity-50 transition-opacity">
@@ -93,12 +114,17 @@ export default function DashboardPage() {
 
               <div className="bg-[#111C2E] border border-[#28415F] rounded-2xl p-6 relative overflow-hidden group hover:-translate-y-1 hover:border-[#4EA5FF] hover:shadow-lg hover:shadow-[#4EA5FF]/5 transition-all duration-300">
                 <div className="flex items-center justify-between relative z-10">
-                  <span className="text-[11px] font-bold text-[#9FB6D4] uppercase tracking-wider">Active Deliveries</span>
-                  <span className="text-xs font-bold text-[#4EA5FF] bg-[#4EA5FF]/10 px-2.5 py-1 rounded-xl flex items-center gap-1 shadow-sm">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-8 w-8 rounded-xl bg-[#4EA5FF]/10 border border-[#4EA5FF]/20 flex items-center justify-center text-[#4EA5FF] shrink-0">
+                      <Truck size={15} />
+                    </div>
+                    <span className="text-[11px] font-bold text-[#9FB6D4] uppercase tracking-wider">Active Deliveries</span>
+                  </div>
+                  <span className="text-xs font-bold text-[#4EA5FF] bg-[#4EA5FF]/10 px-2.5 py-1 rounded-xl flex items-center gap-1 shadow-sm shrink-0">
                     Secure <TrendingUp size={12} className="animate-pulse" />
                   </span>
                 </div>
-                <h2 className="text-3xl font-black text-white mt-4 font-mono tracking-tight relative z-10">92 Projects</h2>
+                <h2 className="text-xl sm:text-2xl font-black text-white mt-4 font-mono tracking-tight relative z-10 truncate">92 Projects</h2>
                 
                 {/* Embedded Mini-Sparkline Graph Overlay */}
                 <div className="absolute bottom-0 left-0 right-0 h-10 opacity-30 group-hover:opacity-50 transition-opacity">
@@ -110,12 +136,17 @@ export default function DashboardPage() {
 
               <div className="bg-[#111C2E] border border-[#28415F] rounded-2xl p-6 relative overflow-hidden group hover:-translate-y-1 hover:border-[#4EA5FF] hover:shadow-lg hover:shadow-[#4EA5FF]/5 transition-all duration-300">
                 <div className="flex items-center justify-between relative z-10">
-                  <span className="text-[11px] font-bold text-[#9FB6D4] uppercase tracking-wider">Outstanding Liability</span>
-                  <span className="text-xs font-bold text-[#FF5C5C] bg-[#FF5C5C]/10 px-2.5 py-1 rounded-xl flex items-center gap-1 shadow-sm animate-pulse">
-                    <ShieldAlert size={12} /> Critical Action
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-8 w-8 rounded-xl bg-[#FF5C5C]/10 border border-[#FF5C5C]/20 flex items-center justify-center text-[#FF5C5C] shrink-0">
+                      <ShieldAlert size={15} />
+                    </div>
+                    <span className="text-[11px] font-bold text-[#9FB6D4] uppercase tracking-wider">Outstanding Liability</span>
+                  </div>
+                  <span className="text-xs font-bold text-[#FF5C5C] bg-[#FF5C5C]/10 px-2.5 py-1 rounded-xl flex items-center gap-1 shadow-sm animate-pulse shrink-0">
+                    Critical
                   </span>
                 </div>
-                <h2 className="text-3xl font-black text-[#FF5C5C] mt-4 font-mono tracking-tight relative z-10">PKR 14,700</h2>
+                <h2 className="text-xl sm:text-2xl font-black text-[#FF5C5C] mt-4 font-mono tracking-tight relative z-10 truncate">PKR 14,700</h2>
                 
                 {/* Embedded Mini-Sparkline Graph Overlay */}
                 <div className="absolute bottom-0 left-0 right-0 h-10 opacity-20 group-hover:opacity-40 transition-opacity">
@@ -126,19 +157,88 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* INTEGRATED SYSTEM RECOGNITION BANNER */}
+            {/* REVENUE TREND + RECENT ACTIVITY — TWO COLUMN LAYOUT */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              {/* Revenue trend chart — takes 2/3 width on large screens */}
+              <div className="lg:col-span-2 bg-[#111C2E] border border-[#28415F] rounded-2xl p-6 space-y-5 shadow-xl">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-bold text-white uppercase tracking-wider">Revenue Trend</h3>
+                    <p className="text-xs text-[#9FB6D4] mt-0.5">Last 6 months, gross inflow vs prior period.</p>
+                  </div>
+                  <button onClick={() => goTo('Analytics')} className="text-xs font-bold text-[#4EA5FF] hover:text-[#69b4ff] flex items-center gap-1 shrink-0 transition-colors">
+                    Full report <ArrowUpRight size={12} />
+                  </button>
+                </div>
+
+                <div className="relative h-48 w-full">
+                  <svg className="w-full h-full overflow-visible" viewBox="0 0 500 160" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#36D399" stopOpacity="0.25"/>
+                        <stop offset="100%" stopColor="#36D399" stopOpacity="0"/>
+                      </linearGradient>
+                    </defs>
+                    <line x1="0" y1="40" x2="500" y2="40" stroke="#28415F" strokeWidth="0.5" strokeDasharray="6 6" />
+                    <line x1="0" y1="80" x2="500" y2="80" stroke="#28415F" strokeWidth="0.5" strokeDasharray="6 6" />
+                    <line x1="0" y1="120" x2="500" y2="120" stroke="#28415F" strokeWidth="0.5" strokeDasharray="6 6" />
+                    <path d="M 0,110 L 83,95 L 166,100 L 250,60 L 333,70 L 416,35 L 500,45 L 500,160 L 0,160 Z" fill="url(#revGrad)" />
+                    <path d="M 0,110 L 83,95 L 166,100 L 250,60 L 333,70 L 416,35 L 500,45" fill="none" stroke="#36D399" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                    {[110, 95, 100, 60, 70, 35, 45].map((y, i) => (
+                      <circle key={i} cx={i * 83.3} cy={y} r="4" fill="#090E17" stroke="#36D399" strokeWidth="2" />
+                    ))}
+                  </svg>
+                </div>
+                <div className="flex justify-between text-[10px] text-[#9FB6D4]/50 font-bold uppercase tracking-wider pt-1 border-t border-[#28415F]/30">
+                  <span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span>
+                </div>
+              </div>
+
+              {/* Recent activity feed — takes 1/3 width */}
+              <div className="bg-[#111C2E] border border-[#28415F] rounded-2xl p-6 space-y-4 shadow-xl flex flex-col">
+                <div>
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">Recent Activity</h3>
+                  <p className="text-xs text-[#9FB6D4] mt-0.5">Latest events across your workspace.</p>
+                </div>
+                <div className="space-y-1 -mx-2 flex-1">
+                  {notificationsList.map((notif) => (
+                    <div key={notif.id} className="flex gap-3 p-2 rounded-xl hover:bg-[#17263C]/60 transition-colors">
+                      <div className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${notif.type === 'success' ? 'bg-[#36D399]' : notif.type === 'warning' ? 'bg-orange-400' : 'bg-[#4EA5FF]'}`} />
+                      <div className="space-y-0.5 min-w-0">
+                        <p className="text-xs font-bold text-white truncate">{notif.title}</p>
+                        <p className="text-[11px] text-[#9FB6D4]/70 leading-normal">{notif.desc}</p>
+                        <span className="text-[9px] text-[#9FB6D4]/40 block">{notif.time}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={() => goTo('Ledgers')} className="w-full text-center text-xs font-bold text-[#4EA5FF] hover:text-[#69b4ff] py-2 rounded-xl hover:bg-[#4EA5FF]/5 transition-colors">
+                  View all ledger activity
+                </button>
+              </div>
+            </div>
+
+            {/* QUICK ACTIONS ROW */}
             <div className="bg-gradient-to-r from-[#111C2E] to-[#16253b] border border-[#28415F] rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
               <div className="space-y-1 text-center md:text-left">
                 <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 justify-center md:justify-start">
                   <Briefcase size={16} className="text-[#4EA5FF]" /> Corporate Control Center
                 </h3>
                 <p className="text-xs text-[#9FB6D4] max-w-xl leading-relaxed">
-                  Welcome to the updated operational matrix. Select options from the side menu stream to track dynamic pipeline allocations, audit transactions logs, or manage security nodes.
+                  Track pipeline allocations, audit transaction logs, or manage your rider fleet — all from one place.
                 </p>
               </div>
-              <button onClick={() => setActiveMenu('Analytics')} className="px-4 py-2.5 bg-[#4EA5FF] text-[#090E17] font-bold text-xs rounded-xl hover:bg-[#69b4ff] active:scale-95 transition-all shrink-0 shadow-md shadow-[#4EA5FF]/15">
-                Execute Analytics Wave
-              </button>
+              <div className="flex flex-wrap items-center justify-center gap-2 shrink-0">
+                <button onClick={() => goTo('Ledgers')} className="px-4 py-2.5 bg-[#090E17] border border-[#28415F] text-white font-bold text-xs rounded-xl hover:border-[#4EA5FF]/40 hover:bg-[#17263C] active:scale-95 transition-all">
+                  View Ledgers
+                </button>
+                <button onClick={() => goTo('Rider Fleet')} className="px-4 py-2.5 bg-[#090E17] border border-[#28415F] text-white font-bold text-xs rounded-xl hover:border-[#4EA5FF]/40 hover:bg-[#17263C] active:scale-95 transition-all">
+                  Rider Fleet
+                </button>
+                <button onClick={() => goTo('Analytics')} className="px-4 py-2.5 bg-[#4EA5FF] text-[#090E17] font-bold text-xs rounded-xl hover:bg-[#69b4ff] active:scale-95 transition-all shadow-md shadow-[#4EA5FF]/15">
+                  Execute Analytics Wave
+                </button>
+              </div>
             </div>
           </div>
         );
@@ -215,17 +315,32 @@ export default function DashboardPage() {
                     <Download size={12} /> Export CSV
                   </button>
 
-                  <div className="flex items-center gap-2 bg-[#090E17] border border-[#28415F] rounded-xl px-3 py-1.5 focus-within:border-[#4EA5FF] transition-all">
-                    <Filter size={12} className="text-[#4EA5FF]" />
-                    <select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      className="bg-transparent text-xs text-white focus:outline-none cursor-pointer font-bold pr-1"
+                  <div className="relative">
+                    <button
+                      onClick={() => { setShowFilterDropdown(!showFilterDropdown); setShowProfileDropdown(false); setShowNotificationDropdown(false); }}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${showFilterDropdown ? 'bg-[#4EA5FF]/10 border border-[#4EA5FF] text-white' : 'bg-[#090E17] border border-[#28415F] text-white hover:border-[#4EA5FF]/40'}`}
                     >
-                      <option value="all" className="bg-[#111C2E]">All Ledgers Log</option>
-                      <option value="Completed" className="bg-[#111C2E]">Completed Only</option>
-                      <option value="Pending" className="bg-[#111C2E]">Pending Alerts</option>
-                    </select>
+                      <Filter size={12} className="text-[#4EA5FF]" />
+                      {activeFilterLabel}
+                      <ChevronDown size={12} className={`text-[#9FB6D4] transition-transform duration-200 ${showFilterDropdown ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {showFilterDropdown && (
+                      <div className="absolute right-0 mt-2 w-48 bg-[#111C2E] border border-[#28415F] rounded-2xl shadow-2xl py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                        {filterOptions.map((opt) => (
+                          <button
+                            key={opt.value}
+                            onClick={() => { setStatusFilter(opt.value); setShowFilterDropdown(false); }}
+                            className={`w-full flex items-center justify-between px-4 py-2.5 text-xs font-bold transition-colors ${
+                              statusFilter === opt.value ? 'text-[#4EA5FF] bg-[#4EA5FF]/10' : 'text-[#9FB6D4] hover:bg-[#17263C] hover:text-white'
+                            }`}
+                          >
+                            {opt.label}
+                            {statusFilter === opt.value && <CheckCircle2 size={13} />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -415,168 +530,105 @@ export default function DashboardPage() {
     }
   };
 
+  // NOTE: App.jsx already renders the sidebar + shell layout.
+  // DashboardPage only needs to render its own content area — no duplicate sidebar/header here.
+  // Page-specific header copy — avoids the "Dashboard Dashboard Matrix" duplication
+  const pageMeta = {
+    Dashboard: { title: 'Dashboard Overview', subtitle: 'Ali.com corporate control platform — daily snapshot.' },
+    Analytics: { title: 'Analytics', subtitle: 'Capital flow, system health, and performance metrics.' },
+    Ledgers: { title: 'Ledgers', subtitle: 'Audit transaction history with customizable filters.' },
+    Settings: { title: 'Settings', subtitle: 'Manage alerts, integrations, and account preferences.' },
+  };
+  const currentMeta = pageMeta[activeMenu] || { title: activeMenu, subtitle: 'Ali.com corporate control platform.' };
+
   return (
-    <div className="flex min-h-screen bg-[#090E17] text-white antialiased font-sans">
-      
-      {/* 1. MASTER SIDEBAR PANEL */}
-      <aside className="hidden lg:flex flex-col w-64 bg-[#111C2E] border-r border-[#28415F] p-6 justify-between shrink-0">
-        <div className="space-y-8">
-          {/* Main Logo component link stack */}
-         <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setActiveMenu('Dashboard')}>
-  <img 
-    src={logoCyan} 
-    alt="Ali.com Logo" 
-    className="h-10 w-10 object-contain group-hover:scale-105 transition-transform duration-300" 
-    onError={(e) => { console.error("Logo failed to load:", e.target.src); }}
-  />
-  <span className="font-extrabold text-lg text-white tracking-tight group-hover:text-[#4EA5FF] transition-colors">Ali.com Pro</span>
-</div>
-
-          {/* Navigation link arrays map blocks */}
-          <div className="space-y-6">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-wider text-[#9FB6D4]/30 mb-3 pl-2">Menu Controls</p>
-              <nav className="space-y-1">
-                {menuItems.map((item) => (
-                  <button
-                    key={item.name}
-                    onClick={() => { setActiveMenu(item.name); setShowProfileDropdown(false); setShowNotificationDropdown(false); }}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
-                      activeMenu === item.name 
-                        ? 'bg-[#4EA5FF]/10 text-[#4EA5FF] border border-[#4EA5FF]/20' 
-                        : 'text-[#9FB6D4] border border-transparent hover:bg-[#17263C] hover:text-white'
-                    }`}
-                  >
-                    {item.icon}
-                    {item.name}
-                  </button>
-                ))}
-              </nav>
-            </div>
-
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-wider text-[#9FB6D4]/30 mb-3 pl-2">System & Settings</p>
-              <nav className="space-y-1">
-                {generalItems.map((item) => (
-                  <button
-                    key={item.name}
-                    onClick={() => { setActiveMenu(item.name); setShowProfileDropdown(false); setShowNotificationDropdown(false); }}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
-                      activeMenu === item.name 
-                        ? 'bg-[#4EA5FF]/10 text-[#4EA5FF] border border-[#4EA5FF]/20' 
-                        : 'text-[#9FB6D4] border border-transparent hover:bg-[#17263C] hover:text-white'
-                    }`}
-                  >
-                    {item.icon}
-                    {item.name}
-                  </button>
-                ))}
-              </nav>
-            </div>
-          </div>
+    <div className="space-y-6">
+      {/* Small in-page header for context + notifications/profile (no sidebar duplication) */}
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#28415F]/30 pb-4 relative">
+        <div>
+          <h1 className="text-xl font-black tracking-tight text-white flex items-center gap-2">
+            {currentMeta.title}
+          </h1>
+          <p className="text-xs text-[#9FB6D4]">{currentMeta.subtitle}</p>
         </div>
 
-        {/* Sync Telemetry Cluster Node Log Box */}
-        <div className="bg-[#090E17]/60 border border-[#28415F] rounded-2xl p-4 space-y-2.5 shadow-md">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-[#36D399] animate-pulse"></span>
-            <p className="text-[11px] font-bold text-white uppercase tracking-wide">Telemetry Node</p>
-          </div>
-          <p className="text-[10px] text-[#9FB6D4]/50 leading-normal">Cluster gateway server tracking assets logs index secure.</p>
-        </div>
-      </aside>
-
-      {/* 2. DYNAMIC WORKSPACE PANEL MAIN COMPONENT */}
-      <main className="flex-1 p-4 md:p-6 lg:p-8 space-y-6 overflow-y-auto max-h-screen relative">
-        
-        {/* GLOBAL HEADER BAR BLOCK WITH INTERACTIVE DROPDOWNS COMPONENTS */}
-        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#28415F]/30 pb-4 relative">
-          <div>
-            <h1 className="text-xl font-black tracking-tight text-white flex items-center gap-2">
-              {activeMenu} Dashboard Matrix
-            </h1>
-            <p className="text-xs text-[#9FB6D4]">Ali.com corporate automated control platform management gateway.</p>
+        <div className="flex flex-wrap items-center gap-3 relative">
+          {/* Global Context Search logs inputs controls */}
+          <div className="relative w-44 sm:w-56">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <Search size={14} className="text-[#9FB6D4]/50" />
+            </span>
+            <input
+              type="text"
+              placeholder="Global search logs..."
+              className="w-full bg-[#111C2E] border border-[#28415F] rounded-xl pl-9 pr-4 py-1.5 text-xs text-white placeholder-[#9FB6D4]/30 focus:outline-none focus:border-[#4EA5FF] transition-all"
+            />
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 relative">
-            {/* Global Context Search logs inputs controls */}
-            <div className="relative w-44 sm:w-56">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <Search size={14} className="text-[#9FB6D4]/50" />
-              </span>
-              <input
-                type="text"
-                placeholder="Global search logs..."
-                className="w-full bg-[#111C2E] border border-[#28415F] rounded-xl pl-9 pr-4 py-1.5 text-xs text-white placeholder-[#9FB6D4]/30 focus:outline-none focus:border-[#4EA5FF] transition-all"
-              />
-            </div>
+          {/* NOTIFICATIONS CONTROL DROP CONTAINER PANEL WITH PREMIUM STATE ALERT CARDS */}
+          <div className="relative">
+            <button 
+              onClick={() => { setShowNotificationDropdown(!showNotificationDropdown); setShowProfileDropdown(false); setShowFilterDropdown(false); }}
+              className={`relative h-8 w-8 bg-[#111C2E] border rounded-xl flex items-center justify-center text-white hover:bg-[#17263C] hover:border-[#4EA5FF]/40 active:scale-95 transition-all ${showNotificationDropdown ? 'border-[#4EA5FF] bg-[#4EA5FF]/10 shadow-lg' : 'border-[#28415F]'}`}
+            >
+              <Bell size={15} />
+              <span className="absolute top-1.5 right-2 h-2 w-2 rounded-full bg-orange-500 ring-2 ring-[#111C2E] animate-pulse"></span>
+            </button>
 
-            {/* NOTIFICATIONS CONTROL DROP CONTAINER PANEL WITH PREMIUM STATE ALERT CARDS */}
-            <div className="relative">
-              <button 
-                onClick={() => { setShowNotificationDropdown(!showNotificationDropdown); setShowProfileDropdown(false); }}
-                className={`relative h-8 w-8 bg-[#111C2E] border rounded-xl flex items-center justify-center text-white hover:bg-[#17263C] hover:border-[#4EA5FF]/40 active:scale-95 transition-all ${showNotificationDropdown ? 'border-[#4EA5FF] bg-[#4EA5FF]/10 shadow-lg' : 'border-[#28415F]'}`}
-              >
-                <Bell size={15} />
-                <span className="absolute top-1.5 right-2 h-2 w-2 rounded-full bg-orange-500 ring-2 ring-[#111C2E] animate-pulse"></span>
-              </button>
-
-              {showNotificationDropdown && (
-                <div className="absolute right-0 mt-3 w-80 bg-[#111C2E] border border-[#28415F] rounded-2xl shadow-2xl py-3 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="px-4 pb-2 border-b border-[#28415F]/40 flex items-center justify-between">
-                    <span className="text-xs font-bold text-white uppercase tracking-wider">Live System Alerts</span>
-                    <span className="text-[10px] text-[#4EA5FF] bg-[#4EA5FF]/10 px-2 py-0.5 rounded-full font-black">3 Logs</span>
-                  </div>
-                  <div className="divide-y divide-[#28415F]/20 max-h-64 overflow-y-auto">
-                    {notificationsList.map((notif) => (
-                      <div key={notif.id} className="p-3.5 hover:bg-[#17263C]/50 transition-colors flex gap-3">
-                        <div className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${notif.type === 'success' ? 'bg-[#36D399]' : 'bg-orange-400'}`} />
-                        <div className="space-y-0.5">
-                          <p className="text-xs font-bold text-white">{notif.title}</p>
-                          <p className="text-[11px] text-[#9FB6D4]/80 leading-normal">{notif.desc}</p>
-                          <span className="text-[9px] text-[#9FB6D4]/40 block pt-1">{notif.time}</span>
-                        </div>
+            {showNotificationDropdown && (
+              <div className="absolute right-0 mt-3 w-80 bg-[#111C2E] border border-[#28415F] rounded-2xl shadow-2xl py-3 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="px-4 pb-2 border-b border-[#28415F]/40 flex items-center justify-between">
+                  <span className="text-xs font-bold text-white uppercase tracking-wider">Live System Alerts</span>
+                  <span className="text-[10px] text-[#4EA5FF] bg-[#4EA5FF]/10 px-2 py-0.5 rounded-full font-black">3 Logs</span>
+                </div>
+                <div className="divide-y divide-[#28415F]/20 max-h-64 overflow-y-auto">
+                  {notificationsList.map((notif) => (
+                    <div key={notif.id} className="p-3.5 hover:bg-[#17263C]/50 transition-colors flex gap-3">
+                      <div className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${notif.type === 'success' ? 'bg-[#36D399]' : 'bg-orange-400'}`} />
+                      <div className="space-y-0.5">
+                        <p className="text-xs font-bold text-white">{notif.title}</p>
+                        <p className="text-[11px] text-[#9FB6D4]/80 leading-normal">{notif.desc}</p>
+                        <span className="text-[9px] text-[#9FB6D4]/40 block pt-1">{notif.time}</span>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-              )}
-            </div>
-
-            {/* USER CONTROL CONFIG PROFILE PILL DROPDOWN SHORTCUTS */}
-            <div className="relative">
-              <div 
-                onClick={() => { setShowProfileDropdown(!showProfileDropdown); setShowNotificationDropdown(false); }}
-                className={`flex items-center gap-2 bg-[#111C2E] border rounded-xl p-1 pr-3 shadow-sm cursor-pointer hover:bg-[#17263C] hover:border-[#4EA5FF]/40 active:scale-95 transition-all ${showProfileDropdown ? 'border-[#4EA5FF] bg-[#4EA5FF]/5' : 'border-[#28415F]'}`}
-              >
-                <div className="h-6 w-6 rounded-lg bg-[#4EA5FF]/20 flex items-center justify-center font-bold text-xs text-[#4EA5FF]">OP</div>
-                <ChevronDown size={12} className={`text-[#9FB6D4] transition-transform duration-200 ${showProfileDropdown ? 'rotate-180' : ''}`} />
               </div>
-
-              {showProfileDropdown && (
-                <div className="absolute right-0 mt-3 w-48 bg-[#111C2E] border border-[#28415F] rounded-2xl shadow-2xl py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                  <button onClick={() => { setActiveMenu('Profile'); setShowProfileDropdown(false); }} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-[#9FB6D4] hover:bg-[#17263C] hover:text-white transition-colors">
-                    <User size={14} className="text-[#4EA5FF]" /> Profile Settings
-                  </button>
-                  <button onClick={() => { setActiveMenu('Settings'); setShowProfileDropdown(false); }} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-[#9FB6D4] hover:bg-[#17263C] hover:text-white transition-colors">
-                    <Settings size={14} /> Account Settings
-                  </button>
-                  <div className="h-px bg-[#28415F]/40 my-1" />
-                  <button onClick={() => alert('Sign-Out Complete.')} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-[#FF5C5C] hover:bg-[#FF5C5C]/10 transition-colors">
-                    <LogOut size={14} /> System Logout
-                  </button>
-                </div>
-              )}
-            </div>
+            )}
           </div>
-        </header>
 
-        {/* MASTER DYNAMIC VIEW MODULE MOUNT WINDOW TARGET */}
-        <div className="min-h-[50vh]">
-          {renderPageContent()}
+          {/* USER CONTROL CONFIG PROFILE PILL DROPDOWN SHORTCUTS */}
+          <div className="relative">
+            <div 
+              onClick={() => { setShowProfileDropdown(!showProfileDropdown); setShowNotificationDropdown(false); setShowFilterDropdown(false); }}
+              className={`flex items-center gap-2 bg-[#111C2E] border rounded-xl p-1 pr-3 shadow-sm cursor-pointer hover:bg-[#17263C] hover:border-[#4EA5FF]/40 active:scale-95 transition-all ${showProfileDropdown ? 'border-[#4EA5FF] bg-[#4EA5FF]/5' : 'border-[#28415F]'}`}
+            >
+              <div className="h-6 w-6 rounded-lg bg-[#4EA5FF]/20 flex items-center justify-center font-bold text-xs text-[#4EA5FF]">OP</div>
+              <ChevronDown size={12} className={`text-[#9FB6D4] transition-transform duration-200 ${showProfileDropdown ? 'rotate-180' : ''}`} />
+            </div>
+
+            {showProfileDropdown && (
+              <div className="absolute right-0 mt-3 w-48 bg-[#111C2E] border border-[#28415F] rounded-2xl shadow-2xl py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                <button onClick={() => { goTo('Profile'); setShowProfileDropdown(false); }} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-[#9FB6D4] hover:bg-[#17263C] hover:text-white transition-colors">
+                  <User size={14} className="text-[#4EA5FF]" /> Profile Settings
+                </button>
+                <button onClick={() => { goTo('Settings'); setShowProfileDropdown(false); }} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-[#9FB6D4] hover:bg-[#17263C] hover:text-white transition-colors">
+                  <Settings size={14} /> Account Settings
+                </button>
+                <div className="h-px bg-[#28415F]/40 my-1" />
+                <button onClick={() => { setShowProfileDropdown(false); onLogout ? onLogout() : alert('Sign-Out Complete.'); }} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-[#FF5C5C] hover:bg-[#FF5C5C]/10 transition-colors">
+                  <LogOut size={14} /> Logout
+                </button>
+              </div>
+            )}
+          </div>
         </div>
+      </header>
 
-      </main>
+      {/* MASTER DYNAMIC VIEW MODULE MOUNT WINDOW TARGET */}
+      <div className="min-h-[50vh]">
+        {renderPageContent()}
+      </div>
     </div>
   );
 }

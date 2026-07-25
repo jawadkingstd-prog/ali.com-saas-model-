@@ -1,32 +1,203 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  TrendingUp, ArrowUpRight, DollarSign, Users, Award, LayoutGrid, 
-  Calendar, Filter, Bell, ChevronDown, User, Settings, LogOut, 
-  Compass, Search, Mail, Lock, MapPin, Truck, Activity, Shield, 
-  Clock, CheckCircle2, Camera, ShieldAlert, Sliders, Briefcase, 
-  RefreshCw, Download, SlidersHorizontal, Layers, Globe
+import {
+  TrendingUp, ArrowUpRight, DollarSign, Users, Award, LayoutGrid,
+  Calendar, Filter, Bell, ChevronDown, User, Settings, LogOut,
+  Compass, Search, Mail, Lock, MapPin, Truck, Activity, Shield,
+  Clock, CheckCircle2, Camera, ShieldAlert, Sliders, Briefcase,
+  RefreshCw, Download, SlidersHorizontal, Layers, Globe, Zap
 } from 'lucide-react';
 
-export default function DashboardPage({ activeMenu: activeMenuProp, onNavigate, onLogout }) {
-  // Page Routing State — uses the prop from App.jsx if provided (so the
-  // parent sidebar controls the view), falls back to internal state otherwise
+// ═══════════════════════════════════════════════════════════════════════════
+// DESIGN SYSTEM & THEME TOKENS
+// ═══════════════════════════════════════════════════════════════════════════
+const THEME = {
+  // Primary Colors with Premium Gradients
+  colors: {
+    bg: {
+      primary: '#0a0e1a',      // Deep navy (backgrounds)
+      secondary: '#0f1423',    // Slightly lighter
+      tertiary: '#151d2f',     // Card backgrounds
+      surface: '#1a232f',      // Elevated surfaces
+    },
+    accent: {
+      primary: '#4ea5ff',      // Sky Blue (primary action)
+      secondary: '#36d399',    // Emerald (success/positive)
+      warning: '#ffb020',      // Amber (pending)
+      danger: '#ff5c5c',       // Crimson (errors)
+      purple: '#8b5cf6',       // Purple (premium/special)
+    },
+    text: {
+      primary: '#ffffff',      // White text
+      secondary: '#b0c4de',    // Steel blue text
+      tertiary: '#7a8fa6',     // Muted text
+      placeholder: '#546b82',  // Placeholder
+    },
+    border: {
+      light: '#2a3a4f',        // Subtle borders
+      medium: '#3a4a5f',       // Standard borders
+      accent: '#4ea5ff',       // Accent borders
+    }
+  },
+
+  // Gradients for Premium Feel
+  gradients: {
+    blueGlow: 'linear-gradient(135deg, #4ea5ff 0%, #2979d0 100%)',
+    emeraldGlow: 'linear-gradient(135deg, #36d399 0%, #1a9d6f 100%)',
+    purpleGlow: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
+    darkCard: 'linear-gradient(180deg, #151d2f 0%, #0f1423 100%)',
+    darkOverlay: 'linear-gradient(180deg, rgba(15, 20, 35, 0.8), rgba(10, 14, 26, 0.95))',
+  },
+
+  // Shadows for Depth
+  shadows: {
+    sm: '0 2px 8px rgba(0, 0, 0, 0.3)',
+    md: '0 8px 24px rgba(0, 0, 0, 0.4)',
+    lg: '0 16px 48px rgba(0, 0, 0, 0.5)',
+    glow: '0 0 20px rgba(78, 165, 255, 0.15)',
+    glowEmerald: '0 0 20px rgba(54, 211, 153, 0.15)',
+  },
+
+  // Typography System
+  typography: {
+    display: 'font-size: 2.5rem; font-weight: 900; letter-spacing: -0.02em; line-height: 1.1;',
+    h1: 'font-size: 2rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.2;',
+    h2: 'font-size: 1.5rem; font-weight: 700; letter-spacing: 0; line-height: 1.3;',
+    h3: 'font-size: 1.125rem; font-weight: 600; letter-spacing: 0; line-height: 1.4;',
+    body: 'font-size: 0.9375rem; font-weight: 400; line-height: 1.6;',
+    caption: 'font-size: 0.75rem; font-weight: 500; letter-spacing: 0.02em; text-transform: uppercase;',
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ROLE PERMISSIONS MAP
+// ═══════════════════════════════════════════════════════════════════════════
+const ROLE_PERMISSIONS = {
+  ADMIN: ['Dashboard', 'Analytics', 'Ledgers', 'Rider Fleet', 'Profile', 'Settings'],
+  VIEWER: ['Dashboard', 'Analytics', 'Ledgers', 'Profile', 'Settings'],
+  RIDER: ['Dashboard', 'Rider Fleet', 'Profile', 'Settings'],
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// REUSABLE COMPONENT: PREMIUM CARD
+// ═══════════════════════════════════════════════════════════════════════════
+function PremiumCard({ children, className = '', variant = 'default', glow = false }) {
+  const baseStyles = `
+    rounded-3xl p-6 transition-all duration-500 ease-out
+    border backdrop-blur-xl
+  `;
+
+  const variants = {
+    default: `
+      bg-gradient-to-br from-[#151d2f]/80 to-[#0f1423]/80
+      border-[#2a3a4f] hover:border-[#4ea5ff]/40 hover:shadow-lg
+      hover:shadow-[#4ea5ff]/10 hover:-translate-y-0.5
+    `,
+    glass: `
+      bg-[rgba(21,29,47,0.4)] border-[#3a4a5f]
+      hover:bg-[rgba(21,29,47,0.6)] hover:border-[#4ea5ff]/50
+    `,
+    accent: `
+      bg-gradient-to-br from-[#4ea5ff]/5 to-[#2979d0]/5
+      border-[#4ea5ff]/20 hover:border-[#4ea5ff]/60
+      hover:shadow-lg hover:shadow-[#4ea5ff]/20
+    `,
+    success: `
+      bg-gradient-to-br from-[#36d399]/5 to-[#1a9d6f]/5
+      border-[#36d399]/20 hover:border-[#36d399]/60
+      hover:shadow-lg hover:shadow-[#36d399]/20
+    `,
+  };
+
+  return (
+    <div className={`${baseStyles} ${variants[variant]} ${className}`}>
+      {glow && <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-[#4ea5ff]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />}
+      {children}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// REUSABLE COMPONENT: STAT CARD
+// ═══════════════════════════════════════════════════════════════════════════
+function StatCard({ icon: Icon, label, value, trend, color = 'blue', adminOnly = false, userRole = 'ADMIN' }) {
+  if (adminOnly && userRole !== 'ADMIN') return null;
+
+  const colorMap = {
+    blue: { bg: '#4ea5ff', light: '#4ea5ff/10', icon: '#4ea5ff', trend: '#4ea5ff' },
+    green: { bg: '#36d399', light: '#36d399/10', icon: '#36d399', trend: '#36d399' },
+    red: { bg: '#ff5c5c', light: '#ff5c5c/10', icon: '#ff5c5c', trend: '#ff5c5c' },
+    purple: { bg: '#8b5cf6', light: '#8b5cf6/10', icon: '#8b5cf6', trend: '#8b5cf6' },
+  };
+
+  const colorScheme = colorMap[color];
+
+  return (
+    <PremiumCard variant={color === 'blue' ? 'default' : color === 'green' ? 'success' : 'default'} className="relative overflow-hidden group">
+      {/* Animated background gradient */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" 
+           style={{
+             background: `radial-gradient(circle at top right, ${colorScheme.bg}/10, transparent)`,
+             pointerEvents: 'none'
+           }} />
+
+      <div className="relative z-10 flex items-center justify-between">
+        <div className="flex items-center gap-3.5">
+          <div className={`h-10 w-10 rounded-2xl flex items-center justify-center backdrop-blur-sm border`}
+               style={{
+                 background: colorScheme.light,
+                 borderColor: `${colorScheme.bg}40`,
+                 color: colorScheme.icon
+               }}>
+            <Icon size={18} />
+          </div>
+          <span className="text-xs font-bold text-[#b0c4de] uppercase tracking-widest">{label}</span>
+        </div>
+
+        {trend && (
+          <span className="text-xs font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-xl backdrop-blur-sm"
+                style={{
+                  background: `${colorScheme.bg}15`,
+                  color: colorScheme.trend,
+                  border: `1px solid ${colorScheme.bg}40`
+                }}>
+            {trend} <ArrowUpRight size={11} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+          </span>
+        )}
+      </div>
+
+      <h2 className="text-2xl sm:text-3xl font-black text-white mt-5 font-mono tracking-tight group-hover:text-[#4ea5ff] transition-colors">
+        {value}
+      </h2>
+
+      {/* Subtle animated underline */}
+      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#4ea5ff]/40 to-transparent group-hover:via-[#4ea5ff]/80 transition-all duration-500" />
+    </PremiumCard>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MAIN DASHBOARD COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════
+export default function DashboardPage({
+  activeMenu: activeMenuProp,
+  onNavigate,
+  onLogout,
+  userRole = 'ADMIN',
+}) {
   const [internalActiveMenu, setActiveMenu] = useState('Dashboard');
   const activeMenu = activeMenuProp || internalActiveMenu;
 
-  // Navigate either through the parent (preferred, keeps App.jsx in sync)
-  // or fall back to local state if this component is used standalone.
   const goTo = (menuName) => {
     if (onNavigate) onNavigate(menuName);
     else setActiveMenu(menuName);
   };
 
-  // Interactive Dropdown States
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
-
-  // Table Filter State
   const [statusFilter, setStatusFilter] = useState('all');
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const [emailAlerts, setEmailAlerts] = useState(true);
+  const [developerMode, setDeveloperMode] = useState(false);
 
   const filterOptions = [
     { value: 'all', label: 'All Ledgers Log' },
@@ -35,31 +206,24 @@ export default function DashboardPage({ activeMenu: activeMenuProp, onNavigate, 
   ];
   const activeFilterLabel = filterOptions.find(f => f.value === statusFilter)?.label ?? 'All Ledgers Log';
 
-  // Settings Mock Toggles States
-  const [emailAlerts, setEmailAlerts] = useState(true);
-  const [developerMode, setDeveloperMode] = useState(false);
-
-  // Sidebar Menu Layout Items
   const menuItems = [
     { name: 'Dashboard', icon: <LayoutGrid size={18} /> },
     { name: 'Analytics', icon: <Activity size={18} /> },
     { name: 'Ledgers', icon: <Calendar size={18} /> },
     { name: 'Rider Fleet', icon: <Truck size={18} /> },
-  ];
+  ].filter(item => ROLE_PERMISSIONS[userRole]?.includes(item.name));
 
   const generalItems = [
     { name: 'Profile', icon: <User size={18} /> },
     { name: 'Settings', icon: <Settings size={18} /> },
-  ];
+  ].filter(item => ROLE_PERMISSIONS[userRole]?.includes(item.name));
 
-  // Notifications Data Pack
   const notificationsList = [
     { id: 1, type: 'success', title: 'Payment Settled', desc: 'Faiza Malik cleared outstanding ledger.', time: '5 mins ago' },
     { id: 2, type: 'warning', title: 'Pending Alert', desc: 'Zainab Ahmed debit threshold exceeded.', time: '2 hrs ago' },
     { id: 3, type: 'info', title: 'Fleet Update', desc: 'Rider Sajid Khan entered Lahore Route.', time: '4 hrs ago' }
   ];
 
-  // Original Transactions Database
   const transactions = [
     { id: 'TXN-9081', client: 'Faiza Malik', type: 'Credit Received', amount: 12500, date: '2026-07-15', status: 'Completed' },
     { id: 'TXN-9082', client: 'Zainab Ahmed', type: 'Outstanding Debit', amount: 3200, date: '2026-07-14', status: 'Pending' },
@@ -68,7 +232,6 @@ export default function DashboardPage({ activeMenu: activeMenuProp, onNavigate, 
     { id: 'TXN-9085', client: 'Sana Qureshi', type: 'Outstanding Debit', amount: 1500, date: '2026-07-12', status: 'Pending' },
   ];
 
-  // Active Fleet Cards Database
   const activeRoutes = [
     { id: 1, routeName: "Lahore Central Route", hub: "Anarkali to DHA, LHR", driver: "Sajid Khan", vehicle: "Honda CD-70", trips: "142 Trips", status: "On Route", efficiency: "94%", eta: "12 mins", image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=400&q=80" },
     { id: 2, routeName: "Karachi South Express", hub: "Clifton to Korangi, KHI", driver: "Bilal Butt", vehicle: "Carry Dabba", trips: "320 Trips", status: "On Standby", efficiency: "88%", eta: "Delayed", image: "https://images.unsplash.com/photo-1516594798947-e65505dbb29d?auto=format&fit=crop&w=400&q=80" },
@@ -76,263 +239,255 @@ export default function DashboardPage({ activeMenu: activeMenuProp, onNavigate, 
     { id: 4, routeName: "Pindi Commercial Route", hub: "Saddar to Bahria, RWP", driver: "Usman Ghani", vehicle: "Motorcycle", trips: "215 Trips", status: "On Standby", efficiency: "85%", eta: "Standby", image: "https://images.unsplash.com/photo-1616401784845-180882ba9ba8?auto=format&fit=crop&w=400&q=80" }
   ];
 
-  // Functional Filter Implementation
   const filteredTxns = useMemo(() => {
     if (statusFilter === 'all') return transactions;
     return transactions.filter(t => t.status === statusFilter);
   }, [statusFilter]);
 
-  // RENDER CONTROLLER FOR DYNAMIC VIEWS
+  // ───────────────────────────────────────────────────────────
+  // PAGE CONTENT RENDERER
+  // ───────────────────────────────────────────────────────────
   const renderPageContent = () => {
+    const isAllowed = ROLE_PERMISSIONS[userRole]?.includes(activeMenu);
+    if (!isAllowed) {
+      return (
+        <div className="flex flex-col items-center justify-center h-64">
+          <ShieldAlert size={56} className="mb-4 text-[#ff5c5c]/70 animate-pulse" />
+          <h2 className="text-2xl font-bold text-white">Access Denied</h2>
+          <p className="text-sm text-[#b0c4de] mt-2">You do not have permission to view {activeMenu}.</p>
+        </div>
+      );
+    }
+
     switch (activeMenu) {
       case 'Dashboard':
         return (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            {/* ENHANCED QUICK STATS CARDS WITH SPARKLINE INTEGRATION */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              <div className="bg-[#111C2E] border border-[#28415F] rounded-2xl p-6 relative overflow-hidden group hover:-translate-y-1 hover:border-[#4EA5FF] hover:shadow-lg hover:shadow-[#4EA5FF]/5 transition-all duration-300">
-                <div className="flex items-center justify-between relative z-10">
-                  <div className="flex items-center gap-2.5">
-                    <div className="h-8 w-8 rounded-xl bg-[#36D399]/10 border border-[#36D399]/20 flex items-center justify-center text-[#36D399] shrink-0">
-                      <DollarSign size={15} />
-                    </div>
-                    <span className="text-[11px] font-bold text-[#9FB6D4] uppercase tracking-wider">Total Gross Revenue</span>
-                  </div>
-                  <span className="text-xs font-bold text-[#36D399] bg-[#36D399]/10 px-2.5 py-1 rounded-xl flex items-center gap-1 shadow-sm shrink-0">
-                    +18.4% <ArrowUpRight size={12} />
-                  </span>
-                </div>
-                <h2 className="text-xl sm:text-2xl font-black text-white mt-4 font-mono tracking-tight relative z-10 truncate">PKR 482,900</h2>
-                
-                {/* Embedded Mini-Sparkline Graph Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 h-10 opacity-30 group-hover:opacity-50 transition-opacity">
-                  <svg className="w-full h-full" viewBox="0 0 100 20" preserveAspectRatio="none">
-                    <path d="M0,15 Q20,5 40,12 T80,3 T100,10 L100,20 L0,20 Z" fill="#36D399" />
-                  </svg>
-                </div>
-              </div>
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {/* HERO STATS SECTION */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {userRole === 'ADMIN' && (
+                <StatCard
+                  icon={DollarSign}
+                  label="Total Gross Revenue"
+                  value="PKR 482,900"
+                  trend="+18.4%"
+                  color="green"
+                  userRole={userRole}
+                />
+              )}
 
-              <div className="bg-[#111C2E] border border-[#28415F] rounded-2xl p-6 relative overflow-hidden group hover:-translate-y-1 hover:border-[#4EA5FF] hover:shadow-lg hover:shadow-[#4EA5FF]/5 transition-all duration-300">
-                <div className="flex items-center justify-between relative z-10">
-                  <div className="flex items-center gap-2.5">
-                    <div className="h-8 w-8 rounded-xl bg-[#4EA5FF]/10 border border-[#4EA5FF]/20 flex items-center justify-center text-[#4EA5FF] shrink-0">
-                      <Truck size={15} />
-                    </div>
-                    <span className="text-[11px] font-bold text-[#9FB6D4] uppercase tracking-wider">Active Deliveries</span>
-                  </div>
-                  <span className="text-xs font-bold text-[#4EA5FF] bg-[#4EA5FF]/10 px-2.5 py-1 rounded-xl flex items-center gap-1 shadow-sm shrink-0">
-                    Secure <TrendingUp size={12} className="animate-pulse" />
-                  </span>
-                </div>
-                <h2 className="text-xl sm:text-2xl font-black text-white mt-4 font-mono tracking-tight relative z-10 truncate">92 Projects</h2>
-                
-                {/* Embedded Mini-Sparkline Graph Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 h-10 opacity-30 group-hover:opacity-50 transition-opacity">
-                  <svg className="w-full h-full" viewBox="0 0 100 20" preserveAspectRatio="none">
-                    <path d="M0,10 Q25,18 50,8 T75,14 T100,5 L100,20 L0,20 Z" fill="#4EA5FF" />
-                  </svg>
-                </div>
-              </div>
+              <StatCard
+                icon={Truck}
+                label="Active Deliveries"
+                value="92 Projects"
+                trend="Secure"
+                color="blue"
+                userRole={userRole}
+              />
 
-              <div className="bg-[#111C2E] border border-[#28415F] rounded-2xl p-6 relative overflow-hidden group hover:-translate-y-1 hover:border-[#4EA5FF] hover:shadow-lg hover:shadow-[#4EA5FF]/5 transition-all duration-300">
-                <div className="flex items-center justify-between relative z-10">
-                  <div className="flex items-center gap-2.5">
-                    <div className="h-8 w-8 rounded-xl bg-[#FF5C5C]/10 border border-[#FF5C5C]/20 flex items-center justify-center text-[#FF5C5C] shrink-0">
-                      <ShieldAlert size={15} />
-                    </div>
-                    <span className="text-[11px] font-bold text-[#9FB6D4] uppercase tracking-wider">Outstanding Liability</span>
-                  </div>
-                  <span className="text-xs font-bold text-[#FF5C5C] bg-[#FF5C5C]/10 px-2.5 py-1 rounded-xl flex items-center gap-1 shadow-sm animate-pulse shrink-0">
-                    Critical
-                  </span>
-                </div>
-                <h2 className="text-xl sm:text-2xl font-black text-[#FF5C5C] mt-4 font-mono tracking-tight relative z-10 truncate">PKR 14,700</h2>
-                
-                {/* Embedded Mini-Sparkline Graph Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 h-10 opacity-20 group-hover:opacity-40 transition-opacity">
-                  <svg className="w-full h-full" viewBox="0 0 100 20" preserveAspectRatio="none">
-                    <path d="M0,5 Q30,15 60,4 T100,16 L100,20 L0,20 Z" fill="#FF5C5C" />
-                  </svg>
-                </div>
-              </div>
+              {userRole === 'ADMIN' && (
+                <StatCard
+                  icon={ShieldAlert}
+                  label="Outstanding Liability"
+                  value="PKR 14,700"
+                  color="red"
+                  userRole={userRole}
+                />
+              )}
             </div>
 
-            {/* REVENUE TREND + RECENT ACTIVITY — TWO COLUMN LAYOUT */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-              {/* Revenue trend chart — takes 2/3 width on large screens */}
-              <div className="lg:col-span-2 bg-[#111C2E] border border-[#28415F] rounded-2xl p-6 space-y-5 shadow-xl">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-bold text-white uppercase tracking-wider">Revenue Trend</h3>
-                    <p className="text-xs text-[#9FB6D4] mt-0.5">Last 6 months, gross inflow vs prior period.</p>
+            {/* REVENUE TREND + ACTIVITY */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {(userRole === 'ADMIN' || userRole === 'VIEWER') && (
+                <PremiumCard variant="default" className="lg:col-span-2">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-sm font-bold text-white uppercase tracking-widest">Revenue Trend</h3>
+                        <p className="text-xs text-[#7a8fa6] mt-2">Last 6 months performance analysis</p>
+                      </div>
+                      <button onClick={() => goTo('Analytics')} 
+                              className="text-xs font-bold text-[#4ea5ff] hover:text-[#6ab3ff] flex items-center gap-1 transition-colors">
+                        Full report <ArrowUpRight size={12} />
+                      </button>
+                    </div>
+
+                    <div className="relative h-48 w-full">
+                      <svg className="w-full h-full overflow-visible" viewBox="0 0 500 160" preserveAspectRatio="none">
+                        <defs>
+                          <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#36d399" stopOpacity="0.3"/>
+                            <stop offset="100%" stopColor="#36d399" stopOpacity="0"/>
+                          </linearGradient>
+                        </defs>
+                        <line x1="0" y1="40" x2="500" y2="40" stroke="#2a3a4f" strokeWidth="0.5" strokeDasharray="6 6" />
+                        <line x1="0" y1="80" x2="500" y2="80" stroke="#2a3a4f" strokeWidth="0.5" strokeDasharray="6 6" />
+                        <line x1="0" y1="120" x2="500" y2="120" stroke="#2a3a4f" strokeWidth="0.5" strokeDasharray="6 6" />
+                        <path d="M 0,110 L 83,95 L 166,100 L 250,60 L 333,70 L 416,35 L 500,45 L 500,160 L 0,160 Z" fill="url(#revGrad)" />
+                        <path d="M 0,110 L 83,95 L 166,100 L 250,60 L 333,70 L 416,35 L 500,45" 
+                              fill="none" stroke="#36d399" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                        {[110, 95, 100, 60, 70, 35, 45].map((y, i) => (
+                          <circle key={i} cx={i * 83.3} cy={y} r="4" fill="#0a0e1a" stroke="#36d399" strokeWidth="2" />
+                        ))}
+                      </svg>
+                    </div>
                   </div>
-                  <button onClick={() => goTo('Analytics')} className="text-xs font-bold text-[#4EA5FF] hover:text-[#69b4ff] flex items-center gap-1 shrink-0 transition-colors">
-                    Full report <ArrowUpRight size={12} />
-                  </button>
-                </div>
+                </PremiumCard>
+              )}
 
-                <div className="relative h-48 w-full">
-                  <svg className="w-full h-full overflow-visible" viewBox="0 0 500 160" preserveAspectRatio="none">
-                    <defs>
-                      <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#36D399" stopOpacity="0.25"/>
-                        <stop offset="100%" stopColor="#36D399" stopOpacity="0"/>
-                      </linearGradient>
-                    </defs>
-                    <line x1="0" y1="40" x2="500" y2="40" stroke="#28415F" strokeWidth="0.5" strokeDasharray="6 6" />
-                    <line x1="0" y1="80" x2="500" y2="80" stroke="#28415F" strokeWidth="0.5" strokeDasharray="6 6" />
-                    <line x1="0" y1="120" x2="500" y2="120" stroke="#28415F" strokeWidth="0.5" strokeDasharray="6 6" />
-                    <path d="M 0,110 L 83,95 L 166,100 L 250,60 L 333,70 L 416,35 L 500,45 L 500,160 L 0,160 Z" fill="url(#revGrad)" />
-                    <path d="M 0,110 L 83,95 L 166,100 L 250,60 L 333,70 L 416,35 L 500,45" fill="none" stroke="#36D399" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                    {[110, 95, 100, 60, 70, 35, 45].map((y, i) => (
-                      <circle key={i} cx={i * 83.3} cy={y} r="4" fill="#090E17" stroke="#36D399" strokeWidth="2" />
-                    ))}
-                  </svg>
-                </div>
-                <div className="flex justify-between text-[10px] text-[#9FB6D4]/50 font-bold uppercase tracking-wider pt-1 border-t border-[#28415F]/30">
-                  <span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span>
-                </div>
-              </div>
-
-              {/* Recent activity feed — takes 1/3 width */}
-              <div className="bg-[#111C2E] border border-[#28415F] rounded-2xl p-6 space-y-4 shadow-xl flex flex-col">
+              <PremiumCard variant="default" className={`${(userRole === 'ADMIN' || userRole === 'VIEWER') ? '' : 'lg:col-span-3'} flex flex-col`}>
                 <div>
-                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">Recent Activity</h3>
-                  <p className="text-xs text-[#9FB6D4] mt-0.5">Latest events across your workspace.</p>
+                  <h3 className="text-sm font-bold text-white uppercase tracking-widest">Recent Activity</h3>
+                  <p className="text-xs text-[#7a8fa6] mt-2">Latest events across workspace</p>
                 </div>
-                <div className="space-y-1 -mx-2 flex-1">
+                <div className="space-y-2 -mx-3 mt-4 flex-1">
                   {notificationsList.map((notif) => (
-                    <div key={notif.id} className="flex gap-3 p-2 rounded-xl hover:bg-[#17263C]/60 transition-colors">
-                      <div className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${notif.type === 'success' ? 'bg-[#36D399]' : notif.type === 'warning' ? 'bg-orange-400' : 'bg-[#4EA5FF]'}`} />
+                    <div key={notif.id} className="flex gap-3 p-3 rounded-xl hover:bg-[#4ea5ff]/5 transition-colors duration-300">
+                      <div className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${
+                        notif.type === 'success' ? 'bg-[#36d399]' : notif.type === 'warning' ? 'bg-[#ffb020]' : 'bg-[#4ea5ff]'
+                      }`} />
                       <div className="space-y-0.5 min-w-0">
-                        <p className="text-xs font-bold text-white truncate">{notif.title}</p>
-                        <p className="text-[11px] text-[#9FB6D4]/70 leading-normal">{notif.desc}</p>
-                        <span className="text-[9px] text-[#9FB6D4]/40 block">{notif.time}</span>
+                        <p className="text-xs font-bold text-white">{notif.title}</p>
+                        <p className="text-[11px] text-[#7a8fa6] leading-relaxed">{notif.desc}</p>
+                        <span className="text-[9px] text-[#546b82] block">{notif.time}</span>
                       </div>
                     </div>
                   ))}
                 </div>
-                <button onClick={() => goTo('Ledgers')} className="w-full text-center text-xs font-bold text-[#4EA5FF] hover:text-[#69b4ff] py-2 rounded-xl hover:bg-[#4EA5FF]/5 transition-colors">
-                  View all ledger activity
-                </button>
-              </div>
+                {ROLE_PERMISSIONS[userRole]?.includes('Ledgers') && (
+                  <button onClick={() => goTo('Ledgers')} 
+                          className="w-full text-center text-xs font-bold text-[#4ea5ff] hover:text-[#6ab3ff] py-2.5 rounded-xl hover:bg-[#4ea5ff]/5 transition-all duration-300 mt-3 border-t border-[#2a3a4f]">
+                    View all activity
+                  </button>
+                )}
+              </PremiumCard>
             </div>
 
-            {/* QUICK ACTIONS ROW */}
-            <div className="bg-gradient-to-r from-[#111C2E] to-[#16253b] border border-[#28415F] rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
-              <div className="space-y-1 text-center md:text-left">
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 justify-center md:justify-start">
-                  <Briefcase size={16} className="text-[#4EA5FF]" /> Corporate Control Center
-                </h3>
-                <p className="text-xs text-[#9FB6D4] max-w-xl leading-relaxed">
-                  Track pipeline allocations, audit transaction logs, or manage your rider fleet — all from one place.
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center justify-center gap-2 shrink-0">
-                <button onClick={() => goTo('Ledgers')} className="px-4 py-2.5 bg-[#090E17] border border-[#28415F] text-white font-bold text-xs rounded-xl hover:border-[#4EA5FF]/40 hover:bg-[#17263C] active:scale-95 transition-all">
-                  View Ledgers
-                </button>
-                <button onClick={() => goTo('Rider Fleet')} className="px-4 py-2.5 bg-[#090E17] border border-[#28415F] text-white font-bold text-xs rounded-xl hover:border-[#4EA5FF]/40 hover:bg-[#17263C] active:scale-95 transition-all">
-                  Rider Fleet
-                </button>
-                <button onClick={() => goTo('Analytics')} className="px-4 py-2.5 bg-[#4EA5FF] text-[#090E17] font-bold text-xs rounded-xl hover:bg-[#69b4ff] active:scale-95 transition-all shadow-md shadow-[#4EA5FF]/15">
-                  Execute Analytics Wave
-                </button>
-              </div>
-            </div>
+            {/* ADMIN QUICK ACTIONS */}
+            {userRole === 'ADMIN' && (
+              <PremiumCard variant="accent" className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="space-y-2 text-center md:text-left">
+                  <h3 className="text-base font-bold text-white uppercase tracking-widest flex items-center gap-2 justify-center md:justify-start">
+                    <Zap size={18} className="text-[#ffb020]" /> Control Center
+                  </h3>
+                  <p className="text-sm text-[#7a8fa6] max-w-xl leading-relaxed">
+                    Manage operations, audit transactions, and coordinate your fleet from one unified platform.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-3 shrink-0">
+                  <button onClick={() => goTo('Ledgers')} 
+                          className="px-4 py-2.5 bg-[#151d2f] border border-[#2a3a4f] text-white font-bold text-xs rounded-2xl hover:border-[#4ea5ff]/60 hover:bg-[#1a232f] active:scale-95 transition-all duration-300">
+                    View Ledgers
+                  </button>
+                  <button onClick={() => goTo('Rider Fleet')} 
+                          className="px-4 py-2.5 bg-[#151d2f] border border-[#2a3a4f] text-white font-bold text-xs rounded-2xl hover:border-[#4ea5ff]/60 hover:bg-[#1a232f] active:scale-95 transition-all duration-300">
+                    Fleet Tracker
+                  </button>
+                  <button onClick={() => goTo('Analytics')} 
+                          className="px-4 py-2.5 bg-gradient-to-r from-[#4ea5ff] to-[#2979d0] text-white font-bold text-xs rounded-2xl hover:shadow-lg hover:shadow-[#4ea5ff]/30 active:scale-95 transition-all duration-300">
+                    Analytics
+                  </button>
+                </div>
+              </PremiumCard>
+            )}
           </div>
         );
 
       case 'Analytics':
         return (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <div className="bg-[#111C2E] border border-[#28415F] rounded-2xl p-6 space-y-6 shadow-xl">
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <PremiumCard variant="default" className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-bold text-sm text-white uppercase tracking-wider">Capital Flow Vectors</h3>
-                  <p className="text-xs text-[#9FB6D4] mt-0.5">Automated visual curves mapping financial inflow metrics against constraints limits.</p>
+                  <h3 className="font-bold text-sm text-white uppercase tracking-widest">Capital Flow Analysis</h3>
+                  <p className="text-xs text-[#7a8fa6] mt-2">Financial inflow metrics against system limits</p>
                 </div>
-                <div className="flex items-center gap-2 bg-[#090E17] border border-[#28415F] px-3 py-1.5 rounded-xl text-xs font-bold text-[#4EA5FF]">
-                  <RefreshCw size={12} className="animate-spin" /> Stream Synced
+                <div className="flex items-center gap-2 bg-[#151d2f] border border-[#2a3a4f] px-3 py-1.5 rounded-xl text-xs font-bold text-[#4ea5ff]">
+                  <RefreshCw size={12} className="animate-spin" /> Live Sync
                 </div>
               </div>
 
-              {/* Glowing SVG Curve Design */}
-              <div className="relative h-64 w-full bg-[#090E17]/50 rounded-2xl p-4 border border-[#28415F]/40 overflow-hidden">
+              <div className="relative h-64 w-full bg-[#0a0e1a]/60 rounded-2xl p-4 border border-[#2a3a4f]/60 overflow-hidden">
                 <svg className="w-full h-full overflow-visible" viewBox="0 0 500 200" preserveAspectRatio="none">
                   <defs>
                     <linearGradient id="glowGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#4EA5FF" stopOpacity="0.2"/>
-                      <stop offset="100%" stopColor="#4EA5FF" stopOpacity="0"/>
+                      <stop offset="0%" stopColor="#4ea5ff" stopOpacity="0.25"/>
+                      <stop offset="100%" stopColor="#4ea5ff" stopOpacity="0"/>
                     </linearGradient>
                   </defs>
-                  <line x1="0" y1="50" x2="500" y2="50" stroke="#28415F" strokeWidth="0.5" strokeDasharray="6 6" />
-                  <line x1="0" y1="100" x2="500" y2="100" stroke="#28415F" strokeWidth="0.5" strokeDasharray="6 6" />
-                  <line x1="0" y1="150" x2="500" y2="150" stroke="#28415F" strokeWidth="0.5" strokeDasharray="6 6" />
+                  <line x1="0" y1="50" x2="500" y2="50" stroke="#2a3a4f" strokeWidth="0.5" strokeDasharray="6 6" />
+                  <line x1="0" y1="100" x2="500" y2="100" stroke="#2a3a4f" strokeWidth="0.5" strokeDasharray="6 6" />
+                  <line x1="0" y1="150" x2="500" y2="150" stroke="#2a3a4f" strokeWidth="0.5" strokeDasharray="6 6" />
                   <path d="M 0,140 Q 60,190 120,100 T 240,75 T 360,50 T 480,95 T 500,80 L 500,200 L 0,200 Z" fill="url(#glowGrad)" />
-                  <path d="M 0,140 Q 60,190 120,100 T 240,75 T 360,50 T 480,95 T 500,80" fill="none" stroke="#4EA5FF" strokeWidth="3" strokeLinecap="round" />
+                  <path d="M 0,140 Q 60,190 120,100 T 240,75 T 360,50 T 480,95 T 500,80" 
+                        fill="none" stroke="#4ea5ff" strokeWidth="3" strokeLinecap="round" />
                 </svg>
               </div>
 
-              {/* ENHANCED STATS ROW INSIDE ANALYTICS */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2 border-t border-[#28415F]/30 text-center">
-                <div className="p-2 space-y-0.5">
-                  <p className="text-[10px] text-[#9FB6D4]/50 uppercase tracking-wider font-bold">Peak Inflow</p>
-                  <p className="text-sm font-bold text-white font-mono">PKR 82,400</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-[#2a3a4f]/60 text-center">
+                <div className="p-3 space-y-1">
+                  <p className="text-[10px] text-[#546b82] uppercase tracking-widest font-bold">Peak Inflow</p>
+                  <p className="text-lg font-bold text-white font-mono">PKR 82,400</p>
                 </div>
-                <div className="p-2 space-y-0.5">
-                  <p className="text-[10px] text-[#9FB6D4]/50 uppercase tracking-wider font-bold">Avg Balance</p>
-                  <p className="text-sm font-bold text-[#4EA5FF] font-mono">PKR 34,120</p>
+                <div className="p-3 space-y-1">
+                  <p className="text-[10px] text-[#546b82] uppercase tracking-widest font-bold">Avg Balance</p>
+                  <p className="text-lg font-bold text-[#36d399] font-mono">PKR 34,120</p>
                 </div>
-                <div className="p-2 space-y-0.5">
-                  <p className="text-[10px] text-[#9FB6D4]/50 uppercase tracking-wider font-bold">System Health</p>
-                  <p className="text-sm font-bold text-[#36D399]">99.84% Stable</p>
+                <div className="p-3 space-y-1">
+                  <p className="text-[10px] text-[#546b82] uppercase tracking-widest font-bold">System Health</p>
+                  <p className="text-lg font-bold text-[#36d399]">99.84%</p>
                 </div>
-                <div className="p-2 space-y-0.5">
-                  <p className="text-[10px] text-[#9FB6D4]/50 uppercase tracking-wider font-bold">Active Webhooks</p>
-                  <p className="text-sm font-bold text-white font-mono">14 Nodes</p>
+                <div className="p-3 space-y-1">
+                  <p className="text-[10px] text-[#546b82] uppercase tracking-widest font-bold">Active Nodes</p>
+                  <p className="text-lg font-bold text-white font-mono">14</p>
                 </div>
               </div>
-            </div>
+            </PremiumCard>
           </div>
         );
 
       case 'Ledgers':
         return (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <div className="bg-[#111C2E] border border-[#28415F] rounded-2xl p-5 space-y-4 shadow-xl">
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <PremiumCard variant="default" className="space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                    <Calendar className="text-[#4EA5FF]" size={16} /> Statement Account Ledgers
+                  <h3 className="text-sm font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                    <Calendar className="text-[#4ea5ff]" size={18} /> Account Ledgers
                   </h3>
-                  <p className="text-xs text-[#9FB6D4] mt-0.5">Audit transaction history logs with customizable filter tags.</p>
+                  <p className="text-xs text-[#7a8fa6] mt-2">Transaction history with filters</p>
                 </div>
-                
-                {/* Actions Button Stack + Filter Component */}
+
                 <div className="flex flex-wrap items-center gap-2">
-                  <button onClick={() => alert('Downloading CSV...')} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#090E17] hover:bg-[#17263C] border border-[#28415F] text-xs font-bold rounded-xl text-[#9FB6D4] transition-all">
+                  <button onClick={() => alert('Downloading CSV...')} 
+                          className="flex items-center gap-1.5 px-3 py-2 bg-[#151d2f] hover:bg-[#1a232f] border border-[#2a3a4f] text-xs font-bold rounded-xl text-[#b0c4de] transition-all duration-300">
                     <Download size={12} /> Export CSV
                   </button>
 
                   <div className="relative">
                     <button
-                      onClick={() => { setShowFilterDropdown(!showFilterDropdown); setShowProfileDropdown(false); setShowNotificationDropdown(false); }}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${showFilterDropdown ? 'bg-[#4EA5FF]/10 border border-[#4EA5FF] text-white' : 'bg-[#090E17] border border-[#28415F] text-white hover:border-[#4EA5FF]/40'}`}
+                      onClick={() => { setShowFilterDropdown(!showFilterDropdown); }}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${
+                        showFilterDropdown 
+                          ? 'bg-[#4ea5ff]/15 border border-[#4ea5ff] text-white' 
+                          : 'bg-[#151d2f] border border-[#2a3a4f] text-white hover:border-[#4ea5ff]/40'
+                      }`}
                     >
-                      <Filter size={12} className="text-[#4EA5FF]" />
+                      <Filter size={12} className="text-[#4ea5ff]" />
                       {activeFilterLabel}
-                      <ChevronDown size={12} className={`text-[#9FB6D4] transition-transform duration-200 ${showFilterDropdown ? 'rotate-180' : ''}`} />
+                      <ChevronDown size={12} className={`text-[#7a8fa6] transition-transform duration-300 ${showFilterDropdown ? 'rotate-180' : ''}`} />
                     </button>
 
                     {showFilterDropdown && (
-                      <div className="absolute right-0 mt-2 w-48 bg-[#111C2E] border border-[#28415F] rounded-2xl shadow-2xl py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                      <div className="absolute right-0 mt-2 w-48 bg-gradient-to-br from-[#151d2f] to-[#0f1423] border border-[#2a3a4f] rounded-2xl shadow-2xl py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200 backdrop-blur-xl">
                         {filterOptions.map((opt) => (
                           <button
                             key={opt.value}
                             onClick={() => { setStatusFilter(opt.value); setShowFilterDropdown(false); }}
-                            className={`w-full flex items-center justify-between px-4 py-2.5 text-xs font-bold transition-colors ${
-                              statusFilter === opt.value ? 'text-[#4EA5FF] bg-[#4EA5FF]/10' : 'text-[#9FB6D4] hover:bg-[#17263C] hover:text-white'
+                            className={`w-full flex items-center justify-between px-4 py-2.5 text-xs font-bold transition-colors duration-200 ${
+                              statusFilter === opt.value 
+                                ? 'text-[#4ea5ff] bg-[#4ea5ff]/15' 
+                                : 'text-[#7a8fa6] hover:bg-[#1a232f] hover:text-white'
                             }`}
                           >
                             {opt.label}
@@ -345,28 +500,29 @@ export default function DashboardPage({ activeMenu: activeMenuProp, onNavigate, 
                 </div>
               </div>
 
-              {/* Table Platform */}
-              <div className="overflow-x-auto rounded-xl border border-[#28415F]/40">
+              <div className="overflow-x-auto rounded-2xl border border-[#2a3a4f]/60">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-[#28415F]/60 text-[10px] text-[#9FB6D4] uppercase tracking-wider bg-[#090E17]/60 font-bold">
-                      <th className="p-3.5">Reference ID</th>
-                      <th className="p-3.5">Account Party</th>
-                      <th className="p-3.5">Transaction Name</th>
-                      <th className="p-3.5">Amount Type</th>
-                      <th className="p-3.5 text-right">Status</th>
+                    <tr className="border-b border-[#2a3a4f]/60 text-[10px] text-[#546b82] uppercase tracking-widest bg-[#0a0e1a]/50 font-bold">
+                      <th className="p-4">Reference ID</th>
+                      <th className="p-4">Account Party</th>
+                      <th className="p-4">Transaction</th>
+                      <th className="p-4">Amount</th>
+                      <th className="p-4 text-right">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#28415F]/30 text-xs">
+                  <tbody className="divide-y divide-[#2a3a4f]/40 text-xs">
                     {filteredTxns.map((txn) => (
-                      <tr key={txn.id} className="hover:bg-[#17263C]/60 transition-colors">
-                        <td className="p-3.5 font-mono text-[#4EA5FF] font-bold">{txn.id}</td>
-                        <td className="p-3.5 font-bold text-white">{txn.client}</td>
-                        <td className="p-3.5 text-[#9FB6D4] font-medium">{txn.type}</td>
-                        <td className="p-3.5 text-white font-mono font-bold">PKR {txn.amount.toLocaleString()}</td>
-                        <td className="p-3.5 text-right">
-                          <span className={`inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-0.5 rounded-full ${
-                            txn.status === 'Completed' ? 'text-[#36D399] bg-[#36D399]/10' : 'text-[#FFB020] bg-[#FFB020]/10'
+                      <tr key={txn.id} className="hover:bg-[#4ea5ff]/5 transition-colors duration-300">
+                        <td className="p-4 font-mono text-[#4ea5ff] font-bold">{txn.id}</td>
+                        <td className="p-4 font-bold text-white">{txn.client}</td>
+                        <td className="p-4 text-[#7a8fa6]">{txn.type}</td>
+                        <td className="p-4 text-white font-mono font-bold">PKR {txn.amount.toLocaleString()}</td>
+                        <td className="p-4 text-right">
+                          <span className={`inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-lg backdrop-blur-sm border ${
+                            txn.status === 'Completed' 
+                              ? 'text-[#36d399] bg-[#36d399]/15 border-[#36d399]/30' 
+                              : 'text-[#ffb020] bg-[#ffb020]/15 border-[#ffb020]/30'
                           }`}>
                             {txn.status}
                           </span>
@@ -376,65 +532,59 @@ export default function DashboardPage({ activeMenu: activeMenuProp, onNavigate, 
                   </tbody>
                 </table>
               </div>
-
-              {/* ENHANCED PAGINATION UI PLATFORM */}
-              <div className="flex items-center justify-between pt-3 text-[11px] text-[#9FB6D4]/50 font-bold">
-                <span>Showing {filteredTxns.length} of 5 statement logs</span>
-                <div className="flex gap-1.5">
-                  <button className="px-2.5 py-1 bg-[#090E17] rounded border border-[#28415F] hover:text-white cursor-not-allowed opacity-50">Prev</button>
-                  <button className="px-2.5 py-1 bg-[#4EA5FF] text-[#090E17] rounded border border-[#4EA5FF]">1</button>
-                  <button className="px-2.5 py-1 bg-[#090E17] rounded border border-[#28415F] hover:text-white">Next</button>
-                </div>
-              </div>
-
-            </div>
+            </PremiumCard>
           </div>
         );
 
       case 'Rider Fleet':
         return (
-          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                  <Truck className="text-[#4EA5FF]" size={16} /> Telemetry Transit Fleet
-                </h3>
-                <p className="text-xs text-[#9FB6D4] mt-0.5">Real-time tracker configurations mapping logistics pipelines.</p>
-              </div>
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div>
+              <h3 className="text-sm font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                <Truck className="text-[#4ea5ff]" size={18} /> Telemetry Fleet
+              </h3>
+              <p className="text-xs text-[#7a8fa6] mt-2">Real-time logistics pipeline tracker</p>
             </div>
 
-            {/* Grid of Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {activeRoutes.map((route) => (
-                <div key={route.id} className="bg-[#111C2E] border border-[#28415F] rounded-2xl overflow-hidden group hover:border-[#4EA5FF] hover:-translate-y-1 transition-all duration-300 flex flex-col shadow-md">
-                  <div className="relative h-36 overflow-hidden bg-[#090E17]">
-                    <img src={route.image} alt={route.routeName} className="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-all duration-500" />
-                    <span className="absolute top-2.5 left-2.5 text-[9px] font-black px-2 py-0.5 rounded bg-[#090E17]/90 text-[#36D399] border border-[#36D399]/20 backdrop-blur-sm">{route.status}</span>
-                    <span className="absolute bottom-2.5 right-2.5 text-[9px] font-mono text-white bg-[#111C2E]/80 px-1.5 py-0.5 rounded">ETA: {route.eta}</span>
+                <PremiumCard key={route.id} variant="glass" className="overflow-hidden p-0 flex flex-col h-full transition-all duration-500">
+                  <div className="relative h-40 overflow-hidden bg-[#0a0e1a]">
+                    <img src={route.image} alt={route.routeName} 
+                         className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0a0e1a] to-transparent opacity-80" />
+                    <span className="absolute top-3 left-3 text-[9px] font-black px-2.5 py-1 rounded-full bg-[#36d399]/20 text-[#36d399] border border-[#36d399]/40 backdrop-blur-sm">
+                      {route.status}
+                    </span>
+                    <span className="absolute bottom-3 right-3 text-[9px] font-mono text-white bg-[#0a0e1a]/60 px-2 py-1 rounded-lg backdrop-blur-sm border border-[#2a3a4f]/60">
+                      ETA: {route.eta}
+                    </span>
                   </div>
-                  <div className="p-4 flex-1 flex flex-col justify-between space-y-3 bg-[#111C2E]">
-                    <div className="space-y-0.5">
-                      <h4 className="font-bold text-xs text-white group-hover:text-[#4EA5FF] transition-colors truncate">{route.routeName}</h4>
-                      <p className="text-[11px] text-[#9FB6D4]/60 truncate flex items-center gap-1"><MapPin size={11} className="text-[#4EA5FF]" />{route.hub}</p>
+                  <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                    <div className="space-y-1">
+                      <h4 className="font-bold text-xs text-white truncate hover:text-[#4ea5ff] transition-colors">{route.routeName}</h4>
+                      <p className="text-[11px] text-[#546b82] truncate flex items-center gap-1.5">
+                        <MapPin size={11} className="text-[#4ea5ff] shrink-0" />{route.hub}
+                      </p>
                     </div>
 
-                    {/* Progress tracking path logic indicators */}
-                    <div className="space-y-1 pt-1">
-                      <div className="flex justify-between text-[10px] font-mono font-bold text-[#9FB6D4]/50">
-                        <span>Path Track Index</span>
-                        <span className="text-[#36D399]">{route.efficiency}</span>
+                    <div className="space-y-2 pt-2">
+                      <div className="flex justify-between text-[10px] font-mono font-bold text-[#546b82]">
+                        <span>Efficiency</span>
+                        <span className="text-[#36d399]">{route.efficiency}</span>
                       </div>
-                      <div className="h-1 w-full bg-[#090E17] rounded-full overflow-hidden">
-                        <div className="bg-gradient-to-r from-[#4EA5FF] to-[#36D399] h-full rounded-full" style={{ width: route.efficiency }} />
+                      <div className="h-2 w-full bg-[#0a0e1a] rounded-full overflow-hidden border border-[#2a3a4f]/40">
+                        <div className="bg-gradient-to-r from-[#4ea5ff] to-[#36d399] h-full rounded-full" 
+                             style={{ width: route.efficiency }} />
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between border-t border-[#28415F]/30 pt-2 text-[10px] font-mono text-[#9FB6D4]/40">
+                    <div className="flex items-center justify-between border-t border-[#2a3a4f]/40 pt-3 text-[10px] font-mono text-[#546b82]">
                       <span className="text-white font-bold">{route.driver}</span>
-                      <span className="bg-[#090E17] text-[#9FB6D4]/80 px-1.5 py-0.5 rounded border border-[#28415F]/40">{route.trips}</span>
+                      <span className="bg-[#0a0e1a] text-[#7a8fa6] px-2 py-1 rounded-lg border border-[#2a3a4f]/40">{route.trips}</span>
                     </div>
                   </div>
-                </div>
+                </PremiumCard>
               ))}
             </div>
           </div>
@@ -442,153 +592,179 @@ export default function DashboardPage({ activeMenu: activeMenuProp, onNavigate, 
 
       case 'Profile':
         return (
-          <section className="flex justify-center items-center py-2 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <div className="w-full max-w-xl bg-[#111C2E] border border-[#28415F] rounded-3xl p-6 shadow-2xl space-y-6">
-              <div className="flex flex-col sm:flex-row items-center gap-5 pb-5 border-b border-[#28415F]/40">
-                <div className="relative group cursor-pointer">
-                  <div className="h-20 w-20 rounded-2xl bg-[#4EA5FF]/10 flex items-center justify-center font-black text-2xl text-[#4EA5FF] border-2 border-dashed border-[#4EA5FF]/30 group-hover:border-[#4EA5FF] transition-all">
+          <section className="flex justify-center items-center py-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <PremiumCard variant="default" className="w-full max-w-2xl space-y-6">
+              <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-[#2a3a4f]/60">
+                <div className="relative cursor-pointer group">
+                  <div className="h-24 w-24 rounded-3xl bg-gradient-to-br from-[#4ea5ff]/20 to-[#2979d0]/20 flex items-center justify-center font-black text-3xl text-[#4ea5ff] border-2 border-dashed border-[#4ea5ff]/40 group-hover:border-[#4ea5ff] transition-all duration-300">
                     OP
                   </div>
-                  <div className="absolute -bottom-1 -right-1 bg-[#4EA5FF] text-[#090E17] p-1.5 rounded-lg shadow-md">
-                    <Camera size={12} />
+                  <div className="absolute -bottom-1 -right-1 bg-gradient-to-br from-[#4ea5ff] to-[#2979d0] text-white p-2 rounded-lg shadow-lg">
+                    <Camera size={14} />
                   </div>
                 </div>
-                <div className="text-center sm:text-left space-y-1">
-                  <h3 className="text-base font-bold text-white tracking-wide">Ali.com Core System Admin</h3>
-                  <p className="text-xs text-[#9FB6D4]/70">Access Status Token Rank: Level 01</p>
-                  <span className="inline-block text-[10px] font-bold text-[#36D399] bg-[#36D399]/10 px-2.5 py-0.5 border border-[#36D399]/20 rounded-full mt-1">Operational Token Secure</span>
+                <div className="text-center sm:text-left space-y-2">
+                  <h3 className="text-lg font-bold text-white tracking-tight">Ali.com System {userRole}</h3>
+                  <p className="text-sm text-[#7a8fa6]">Rank Level: {userRole === 'ADMIN' ? '01 — Administrator' : userRole === 'VIEWER' ? '02 — Viewer' : '03 — Rider'}</p>
+                  <span className="inline-block text-[10px] font-bold text-[#36d399] bg-[#36d399]/15 px-3 py-1 border border-[#36d399]/30 rounded-full backdrop-blur-sm">
+                    ✓ Verified & Secure
+                  </span>
                 </div>
               </div>
 
-              {/* Form Controls Inputs layout */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[#9FB6D4]">Admin Username</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-2.5">
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#546b82]">Username</label>
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-3.5"><User size={13} className="text-[#9FB6D4]/40" /></span>
-                    <input type="text" defaultValue="Ali Admin Pro" className="w-full bg-[#090E17] border border-[#28415F] rounded-xl pl-9 pr-4 py-2.5 text-xs text-white font-semibold focus:outline-none focus:border-[#4EA5FF] transition-all" />
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3.5"><User size={14} className="text-[#4ea5ff]" /></span>
+                    <input type="text" defaultValue="Ali Admin Pro" 
+                           className="w-full bg-[#0a0e1a] border border-[#2a3a4f] rounded-2xl pl-10 pr-4 py-3 text-sm text-white font-semibold focus:outline-none focus:border-[#4ea5ff] focus:shadow-lg focus:shadow-[#4ea5ff]/20 transition-all duration-300" />
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[#9FB6D4]">System Email Router</label>
+                <div className="space-y-2.5">
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#546b82]">Email Router</label>
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-3.5"><Mail size={13} className="text-[#9FB6D4]/40" /></span>
-                    <input type="email" defaultValue="ops@ali.com" className="w-full bg-[#090E17] border border-[#28415F] rounded-xl pl-9 pr-4 py-2.5 text-xs text-white font-semibold focus:outline-none focus:border-[#4EA5FF] transition-all" />
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3.5"><Mail size={14} className="text-[#4ea5ff]" /></span>
+                    <input type="email" defaultValue="ops@ali.com" 
+                           className="w-full bg-[#0a0e1a] border border-[#2a3a4f] rounded-2xl pl-10 pr-4 py-3 text-sm text-white font-semibold focus:outline-none focus:border-[#4ea5ff] focus:shadow-lg focus:shadow-[#4ea5ff]/20 transition-all duration-300" />
                   </div>
                 </div>
               </div>
-            </div>
+            </PremiumCard>
           </section>
         );
 
       case 'Settings':
         return (
-          <div className="bg-[#111C2E] border border-[#28415F] rounded-2xl p-6 space-y-6 shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <div>
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <Sliders className="text-[#4EA5FF]" size={16} /> Interactive System Settings
-              </h3>
-              <p className="text-xs text-[#9FB6D4] mt-0.5">Manage automated cluster sync loops and toggle backend webhooks credentials flags.</p>
-            </div>
-
-            <div className="h-px bg-[#28415F]/40" />
-
-            {/* HIGH FIDELITY TOGGLES INTERACTION ROW */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-[#090E17]/40 border border-[#28415F]/30 rounded-xl hover:border-[#28415F] transition-all">
-                <div className="space-y-0.5 pr-4">
-                  <p className="text-xs font-bold text-white flex items-center gap-1.5"><Mail size={13} className="text-[#4EA5FF]" /> Automated Email Alerts</p>
-                  <p className="text-[11px] text-[#9FB6D4]/60">Dispatch transactional ledger reports instantly to primary systems account party.</p>
-                </div>
-                <button 
-                  onClick={() => setEmailAlerts(!emailAlerts)}
-                  className={`w-10 h-5 rounded-full p-0.5 transition-colors relative duration-200 focus:outline-none ${emailAlerts ? 'bg-[#4EA5FF]' : 'bg-[#28415F]'}`}
-                >
-                  <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-200 ${emailAlerts ? 'translate-x-5' : 'translate-x-0'}`} />
-                </button>
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <PremiumCard variant="default" className="space-y-6">
+              <div>
+                <h3 className="text-sm font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                  <Sliders className="text-[#4ea5ff]" size={18} /> System Settings
+                </h3>
+                <p className="text-xs text-[#7a8fa6] mt-2">Manage alerts, integrations, and preferences</p>
               </div>
 
-              <div className="flex items-center justify-between p-3 bg-[#090E17]/40 border border-[#28415F]/30 rounded-xl hover:border-[#28415F] transition-all">
-                <div className="space-y-0.5 pr-4">
-                  <p className="text-xs font-bold text-white flex items-center gap-1.5"><Globe size={13} className="text-purple-400" /> Developer Mode Override</p>
-                  <p className="text-[11px] text-[#9FB6D4]/60">Expose raw payload telemetry arrays structures and database logs indices flags.</p>
+              <div className="h-px bg-gradient-to-r from-[#2a3a4f]/40 via-[#2a3a4f]/20 to-transparent" />
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-[#151d2f]/60 border border-[#2a3a4f]/40 rounded-2xl hover:border-[#2a3a4f] hover:bg-[#151d2f]/80 transition-all duration-300">
+                  <div className="space-y-1 pr-4">
+                    <p className="text-sm font-bold text-white flex items-center gap-2">
+                      <Mail size={14} className="text-[#4ea5ff]" /> Email Alerts
+                    </p>
+                    <p className="text-[12px] text-[#7a8fa6]">Get instant transactional reports</p>
+                  </div>
+                  <button
+                    onClick={() => setEmailAlerts(!emailAlerts)}
+                    className={`w-12 h-6 rounded-full p-0.5 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#4ea5ff]/50 ${
+                      emailAlerts ? 'bg-gradient-to-r from-[#4ea5ff] to-[#2979d0]' : 'bg-[#2a3a4f]'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${
+                      emailAlerts ? 'translate-x-6' : 'translate-x-0'
+                    }`} />
+                  </button>
                 </div>
-                <button 
-                  onClick={() => setDeveloperMode(!developerMode)}
-                  className={`w-10 h-5 rounded-full p-0.5 transition-colors relative duration-200 focus:outline-none ${developerMode ? 'bg-purple-500' : 'bg-[#28415F]'}`}
-                >
-                  <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-200 ${developerMode ? 'translate-x-5' : 'translate-x-0'}`} />
-                </button>
+
+                {userRole === 'ADMIN' && (
+                  <div className="flex items-center justify-between p-4 bg-[#151d2f]/60 border border-[#2a3a4f]/40 rounded-2xl hover:border-[#2a3a4f] hover:bg-[#151d2f]/80 transition-all duration-300">
+                    <div className="space-y-1 pr-4">
+                      <p className="text-sm font-bold text-white flex items-center gap-2">
+                        <Globe size={14} className="text-[#8b5cf6]" /> Developer Mode
+                      </p>
+                      <p className="text-[12px] text-[#7a8fa6]">Access raw telemetry and logs</p>
+                    </div>
+                    <button
+                      onClick={() => setDeveloperMode(!developerMode)}
+                      className={`w-12 h-6 rounded-full p-0.5 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#8b5cf6]/50 ${
+                        developerMode ? 'bg-gradient-to-r from-[#8b5cf6] to-[#6d28d9]' : 'bg-[#2a3a4f]'
+                      }`}
+                    >
+                      <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${
+                        developerMode ? 'translate-x-6' : 'translate-x-0'
+                      }`} />
+                    </button>
+                  </div>
+                )}
               </div>
-            </div>
+            </PremiumCard>
           </div>
         );
 
       default:
-        return null;
+        return <div className="text-[#7a8fa6] text-sm">Select a menu item</div>;
     }
   };
 
-  // NOTE: App.jsx already renders the sidebar + shell layout.
-  // DashboardPage only needs to render its own content area — no duplicate sidebar/header here.
-  // Page-specific header copy — avoids the "Dashboard Dashboard Matrix" duplication
   const pageMeta = {
-    Dashboard: { title: 'Dashboard Overview', subtitle: 'Ali.com corporate control platform — daily snapshot.' },
-    Analytics: { title: 'Analytics', subtitle: 'Capital flow, system health, and performance metrics.' },
-    Ledgers: { title: 'Ledgers', subtitle: 'Audit transaction history with customizable filters.' },
-    Settings: { title: 'Settings', subtitle: 'Manage alerts, integrations, and account preferences.' },
+    Dashboard: { title: 'Dashboard', subtitle: 'Daily performance snapshot.' },
+    Analytics: { title: 'Analytics', subtitle: 'Capital flow analysis and metrics.' },
+    Ledgers: { title: 'Ledgers', subtitle: 'Transaction audit trail.' },
+    'Rider Fleet': { title: 'Fleet Tracker', subtitle: 'Real-time logistics pipeline.' },
+    Profile: { title: 'Profile', subtitle: 'Your account identity.' },
+    Settings: { title: 'Settings', subtitle: 'System preferences and integrations.' },
   };
-  const currentMeta = pageMeta[activeMenu] || { title: activeMenu, subtitle: 'Ali.com corporate control platform.' };
+  const currentMeta = pageMeta[activeMenu] || { title: activeMenu, subtitle: 'Ali.com Platform.' };
 
+  // ───────────────────────────────────────────────────────────
+  // MAIN RENDER
+  // ───────────────────────────────────────────────────────────
   return (
-    <div className="space-y-6">
-      {/* Small in-page header for context + notifications/profile (no sidebar duplication) */}
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#28415F]/30 pb-4 relative">
-        <div>
-          <h1 className="text-xl font-black tracking-tight text-white flex items-center gap-2">
+    <div className="space-y-8" style={{ background: THEME.colors.bg.primary }}>
+      {/* HEADER */}
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 border-b border-[#2a3a4f]/40 pb-6">
+        <div className="space-y-1.5">
+          <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-3 flex-wrap">
             {currentMeta.title}
+            <span className="text-xs font-black px-3 py-1 rounded-full bg-gradient-to-r from-[#4ea5ff]/20 to-[#2979d0]/20 text-[#4ea5ff] border border-[#4ea5ff]/30 uppercase tracking-widest">
+              {userRole}
+            </span>
           </h1>
-          <p className="text-xs text-[#9FB6D4]">{currentMeta.subtitle}</p>
+          <p className="text-sm text-[#7a8fa6]">{currentMeta.subtitle}</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 relative">
-          {/* Global Context Search logs inputs controls */}
-          <div className="relative w-44 sm:w-56">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <Search size={14} className="text-[#9FB6D4]/50" />
+        <div className="flex flex-wrap items-center gap-4 relative">
+          <div className="relative sm:w-64">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
+              <Search size={16} className="text-[#546b82]" />
             </span>
             <input
               type="text"
-              placeholder="Global search logs..."
-              className="w-full bg-[#111C2E] border border-[#28415F] rounded-xl pl-9 pr-4 py-1.5 text-xs text-white placeholder-[#9FB6D4]/30 focus:outline-none focus:border-[#4EA5FF] transition-all"
+              placeholder="Search logs..."
+              className="w-full bg-[#151d2f] border border-[#2a3a4f] rounded-2xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-[#546b82] focus:outline-none focus:border-[#4ea5ff] focus:shadow-lg focus:shadow-[#4ea5ff]/20 transition-all duration-300"
             />
           </div>
 
-          {/* NOTIFICATIONS CONTROL DROP CONTAINER PANEL WITH PREMIUM STATE ALERT CARDS */}
+          {/* NOTIFICATIONS */}
           <div className="relative">
-            <button 
-              onClick={() => { setShowNotificationDropdown(!showNotificationDropdown); setShowProfileDropdown(false); setShowFilterDropdown(false); }}
-              className={`relative h-8 w-8 bg-[#111C2E] border rounded-xl flex items-center justify-center text-white hover:bg-[#17263C] hover:border-[#4EA5FF]/40 active:scale-95 transition-all ${showNotificationDropdown ? 'border-[#4EA5FF] bg-[#4EA5FF]/10 shadow-lg' : 'border-[#28415F]'}`}
+            <button
+              onClick={() => setShowNotificationDropdown(!showNotificationDropdown)}
+              className={`relative h-10 w-10 bg-[#151d2f] border rounded-2xl flex items-center justify-center text-white hover:bg-[#1a232f] transition-all duration-300 ${
+                showNotificationDropdown ? 'border-[#4ea5ff] bg-[#4ea5ff]/10 shadow-lg shadow-[#4ea5ff]/20' : 'border-[#2a3a4f]'
+              }`}
             >
-              <Bell size={15} />
-              <span className="absolute top-1.5 right-2 h-2 w-2 rounded-full bg-orange-500 ring-2 ring-[#111C2E] animate-pulse"></span>
+              <Bell size={16} />
+              <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-gradient-to-r from-[#ffb020] to-[#ff8c42] ring-2 ring-[#0a0e1a] animate-pulse"></span>
             </button>
 
             {showNotificationDropdown && (
-              <div className="absolute right-0 mt-3 w-80 bg-[#111C2E] border border-[#28415F] rounded-2xl shadow-2xl py-3 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                <div className="px-4 pb-2 border-b border-[#28415F]/40 flex items-center justify-between">
-                  <span className="text-xs font-bold text-white uppercase tracking-wider">Live System Alerts</span>
-                  <span className="text-[10px] text-[#4EA5FF] bg-[#4EA5FF]/10 px-2 py-0.5 rounded-full font-black">3 Logs</span>
+              <div className="absolute right-0 mt-4 w-96 bg-gradient-to-br from-[#151d2f]/95 to-[#0f1423]/95 border border-[#2a3a4f] rounded-2xl shadow-2xl py-3 z-50 animate-in fade-in slide-in-from-top-2 duration-200 backdrop-blur-xl">
+                <div className="px-4 pb-3 border-b border-[#2a3a4f]/40 flex items-center justify-between">
+                  <span className="text-xs font-bold text-white uppercase tracking-widest">Live Alerts</span>
+                  <span className="text-[10px] text-[#4ea5ff] bg-[#4ea5ff]/15 px-2.5 py-1 rounded-full font-black border border-[#4ea5ff]/30">3 New</span>
                 </div>
-                <div className="divide-y divide-[#28415F]/20 max-h-64 overflow-y-auto">
+                <div className="divide-y divide-[#2a3a4f]/20 max-h-80 overflow-y-auto">
                   {notificationsList.map((notif) => (
-                    <div key={notif.id} className="p-3.5 hover:bg-[#17263C]/50 transition-colors flex gap-3">
-                      <div className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${notif.type === 'success' ? 'bg-[#36D399]' : 'bg-orange-400'}`} />
-                      <div className="space-y-0.5">
+                    <div key={notif.id} className="p-3.5 hover:bg-[#1a232f]/70 transition-colors duration-200 flex gap-3 cursor-pointer">
+                      <div className={`h-2.5 w-2.5 rounded-full mt-1 shrink-0 ${
+                        notif.type === 'success' ? 'bg-[#36d399]' : notif.type === 'warning' ? 'bg-[#ffb020]' : 'bg-[#4ea5ff]'
+                      }`} />
+                      <div className="space-y-0.5 flex-1">
                         <p className="text-xs font-bold text-white">{notif.title}</p>
-                        <p className="text-[11px] text-[#9FB6D4]/80 leading-normal">{notif.desc}</p>
-                        <span className="text-[9px] text-[#9FB6D4]/40 block pt-1">{notif.time}</span>
+                        <p className="text-[12px] text-[#7a8fa6] leading-relaxed">{notif.desc}</p>
+                        <span className="text-[10px] text-[#546b82] block pt-1">{notif.time}</span>
                       </div>
                     </div>
                   ))}
@@ -597,27 +773,38 @@ export default function DashboardPage({ activeMenu: activeMenuProp, onNavigate, 
             )}
           </div>
 
-          {/* USER CONTROL CONFIG PROFILE PILL DROPDOWN SHORTCUTS */}
+          {/* PROFILE */}
           <div className="relative">
-            <div 
-              onClick={() => { setShowProfileDropdown(!showProfileDropdown); setShowNotificationDropdown(false); setShowFilterDropdown(false); }}
-              className={`flex items-center gap-2 bg-[#111C2E] border rounded-xl p-1 pr-3 shadow-sm cursor-pointer hover:bg-[#17263C] hover:border-[#4EA5FF]/40 active:scale-95 transition-all ${showProfileDropdown ? 'border-[#4EA5FF] bg-[#4EA5FF]/5' : 'border-[#28415F]'}`}
+            <div
+              onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+              className={`flex items-center gap-3 bg-[#151d2f] border rounded-2xl p-2 pr-3.5 cursor-pointer hover:bg-[#1a232f] transition-all duration-300 ${
+                showProfileDropdown ? 'border-[#4ea5ff] bg-[#4ea5ff]/10 shadow-lg shadow-[#4ea5ff]/20' : 'border-[#2a3a4f]'
+              }`}
             >
-              <div className="h-6 w-6 rounded-lg bg-[#4EA5FF]/20 flex items-center justify-center font-bold text-xs text-[#4EA5FF]">OP</div>
-              <ChevronDown size={12} className={`text-[#9FB6D4] transition-transform duration-200 ${showProfileDropdown ? 'rotate-180' : ''}`} />
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[#4ea5ff]/20 to-[#2979d0]/20 flex items-center justify-center font-bold text-xs text-[#4ea5ff] border border-[#4ea5ff]/30">
+                OP
+              </div>
+              <ChevronDown size={14} className={`text-[#7a8fa6] transition-transform duration-300 ${showProfileDropdown ? 'rotate-180' : ''}`} />
             </div>
 
             {showProfileDropdown && (
-              <div className="absolute right-0 mt-3 w-48 bg-[#111C2E] border border-[#28415F] rounded-2xl shadow-2xl py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                <button onClick={() => { goTo('Profile'); setShowProfileDropdown(false); }} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-[#9FB6D4] hover:bg-[#17263C] hover:text-white transition-colors">
-                  <User size={14} className="text-[#4EA5FF]" /> Profile Settings
-                </button>
-                <button onClick={() => { goTo('Settings'); setShowProfileDropdown(false); }} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-[#9FB6D4] hover:bg-[#17263C] hover:text-white transition-colors">
-                  <Settings size={14} /> Account Settings
-                </button>
-                <div className="h-px bg-[#28415F]/40 my-1" />
-                <button onClick={() => { setShowProfileDropdown(false); onLogout ? onLogout() : alert('Sign-Out Complete.'); }} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-[#FF5C5C] hover:bg-[#FF5C5C]/10 transition-colors">
-                  <LogOut size={14} /> Logout
+              <div className="absolute right-0 mt-3 w-56 bg-gradient-to-br from-[#151d2f]/95 to-[#0f1423]/95 border border-[#2a3a4f] rounded-2xl shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 backdrop-blur-xl">
+                {ROLE_PERMISSIONS[userRole]?.includes('Profile') && (
+                  <button onClick={() => { goTo('Profile'); setShowProfileDropdown(false); }} 
+                          className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-[#7a8fa6] hover:bg-[#1a232f] hover:text-white transition-colors duration-200">
+                    <User size={16} className="text-[#4ea5ff]" /> Profile
+                  </button>
+                )}
+                {ROLE_PERMISSIONS[userRole]?.includes('Settings') && (
+                  <button onClick={() => { goTo('Settings'); setShowProfileDropdown(false); }} 
+                          className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-[#7a8fa6] hover:bg-[#1a232f] hover:text-white transition-colors duration-200">
+                    <Settings size={16} /> Settings
+                  </button>
+                )}
+                <div className="h-px bg-[#2a3a4f]/40 my-1" />
+                <button onClick={() => { setShowProfileDropdown(false); onLogout ? onLogout() : alert('Logout'); }} 
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-[#ff5c5c] hover:bg-[#ff5c5c]/10 transition-colors duration-200">
+                  <LogOut size={16} /> Logout
                 </button>
               </div>
             )}
@@ -625,8 +812,8 @@ export default function DashboardPage({ activeMenu: activeMenuProp, onNavigate, 
         </div>
       </header>
 
-      {/* MASTER DYNAMIC VIEW MODULE MOUNT WINDOW TARGET */}
-      <div className="min-h-[50vh]">
+      {/* PAGE CONTENT */}
+      <div className="min-h-[60vh]">
         {renderPageContent()}
       </div>
     </div>

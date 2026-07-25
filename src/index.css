@@ -1,12 +1,15 @@
 @import "tailwindcss";
+
 @theme {
   --font-display: "Sora", ui-sans-serif, system-ui, sans-serif;
   --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  
   /* the 4 palette colors — everything below is derived only from these */
   --color-maroon: #1EA7FD;  /* primary blue — headings, primary text */
   --color-red: #0B3D91;     /* deep blue — CTA / highlights */
   --color-teal: #2ECC71;    /* leaf green — secondary accent */
   --color-sage: #E6F6FF;    /* light blue — main surface */
+  
   /* surfaces: modern light/dark mode with high contrast */
   --color-paper: #F5F7FA;
   --color-ink: #2D3748;
@@ -14,18 +17,21 @@
   --color-card: #FFFFFF;        /* elevated light surface for cards */
   --color-border: #1EA7FD;
   --color-border-soft: #cbd5e0;
+  
   /* ledger ramp — built from green, light-to-dark */
   --color-ledger-50: #e8f8f5;
   --color-ledger-100: #c8e6c9;
   --color-ledger-600: #2ECC71;
   --color-ledger-700: #27ae60;
   --color-ledger-900: #1e8449;
+  
   /* rust ramp — now the blue accent, used sparingly for CTAs / highlights */
   --color-rust-50: #e6f6ff;
   --color-rust-100: #b3e5ff;
   --color-rust-600: #1EA7FD;
   --color-rust-700: #0B3D91;
 }
+
 body {
   background-color: var(--color-paper);
   background-image:
@@ -39,9 +45,11 @@ body {
   font-family: var(--font-body);
   font-feature-settings: "tnum" 1, "cv11" 1;
 }
+
 .font-display {
   font-family: var(--font-display);
 }
+
 /* card surface — elevated panel with subtle border, premium dark mode */
 .card {
   background-color: var(--color-card);
@@ -50,20 +58,24 @@ body {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
   transition: all 0.2s ease;
 }
+
 .card:hover {
   border-color: var(--color-sage);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
+
 /* tabular numerals for wallet balances / ids so columns align like a ledger */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
   color: var(--color-ink);
 }
+
 /* signature: cyan glow for balances or live values — bright accent against dark */
 .ledger-glow {
   color: var(--color-teal);
   text-shadow: 0 0 12px rgba(51, 209, 255, 0.35);
 }
+
 /* single blue accent — reserve for primary CTAs / highlighted items only */
 .cta {
   background-color: var(--color-maroon);
@@ -71,7 +83,27 @@ body {
   transition: all 0.2s ease;
   font-weight: 600;
 }
+
 .cta:hover {
   background-color: var(--color-teal);
   box-shadow: 0 4px 12px rgba(51, 209, 255, 0.5);
+}
+
+/* Custom Dark-Tech Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #090E17;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #28415F;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4EA5FF;
 }

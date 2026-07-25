@@ -19,17 +19,19 @@ export default function CustomersPage() {
 
   // Modals States
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newCustomer, setNewCustomer] = useState({ name: '', phone: '', location: '', balance: '', orders: '' });
-  const [newRider, setNewRider] = useState({ name: '', phone: '', vehicle: '', status: 'Idle', completed: '' });
+  const [viewUserModal, setViewUserModal] = useState(null); // Added View Details Modal state
+
+  const [newCustomer, setNewCustomer] = useState({ firstName: '', lastName: '', phone: '', location: '', address: '', balance: '', orders: '' });
+  const [newRider, setNewRider] = useState({ firstName: '', lastName: '', phone: '', vehicle: '', status: 'Idle', completed: '' });
 
   // --- LIVE DATABASES ---
   const [customers, setCustomers] = useState([
-    { id: 1, name: 'Faiza Malik', phone: '+92 300 1234567', location: 'Lahore, PK', balance: 12500, orders: 45 },
-    { id: 2, name: 'Zainab Ahmed', phone: '+92 321 7654321', location: 'Karachi, PK', balance: -3200, orders: 12 },
-    { id: 3, name: 'Asad Ali', phone: '+92 333 9876543', location: 'Islamabad, PK', balance: 0, orders: 28 },
-    { id: 4, name: 'Hamza Lodhi', phone: '+92 301 4567890', location: 'Rawalpindi, PK', balance: 8400, orders: 19 },
-    { id: 5, name: 'Sana Qureshi', phone: '+92 315 1122334', location: 'Multan, PK', balance: -1500, orders: 7 },
-    { id: 6, name: 'Bilal Farooq', phone: '+92 322 9988776', location: 'Peshawar, PK', balance: 0, orders: 32 },
+    { id: 1, name: 'Faiza Malik', phone: '+92 300 1234567', location: 'Lahore, PK', address: 'House 45, Street 2, Gulberg', balance: 12500, orders: 45 },
+    { id: 2, name: 'Zainab Ahmed', phone: '+92 321 7654321', location: 'Karachi, PK', address: 'Apartment 12B, Clifton', balance: -3200, orders: 12 },
+    { id: 3, name: 'Asad Ali', phone: '+92 333 9876543', location: 'Islamabad, PK', address: 'Sector F-7/2, Street 10', balance: 0, orders: 28 },
+    { id: 4, name: 'Hamza Lodhi', phone: '+92 301 4567890', location: 'Rawalpindi, PK', address: 'Main Peshawar Road, Block C', balance: 8400, orders: 19 },
+    { id: 5, name: 'Sana Qureshi', phone: '+92 315 1122334', location: 'Multan, PK', address: 'Abdali Road, Near Chowk', balance: -1500, orders: 7 },
+    { id: 6, name: 'Bilal Farooq', phone: '+92 322 9988776', location: 'Peshawar, PK', address: 'University Town, Street 5', balance: 0, orders: 32 },
   ]);
 
   const [deliveryPersons, setDeliveryPersons] = useState([
@@ -50,8 +52,8 @@ export default function CustomersPage() {
   const handleStatCardClick = (segment, filterVal) => {
     setActiveSegment(segment);
     setStatusFilter(filterVal);
-    setSearchQuery(''); // Reset search so they can see full filtered list
-    setCurrentPage(1); // Reset page to 1
+    setSearchQuery(''); 
+    setCurrentPage(1); 
     setActiveRowDropdown(null);
     toast.success(`Showing ${filterVal === 'all' ? 'All' : filterVal.replace('-', ' ')} entries!`, {
       id: 'stat-filter-toast',
@@ -74,37 +76,40 @@ export default function CustomersPage() {
   const handleAddSubmit = (e) => {
     e.preventDefault();
     if (activeSegment === 'customers') {
-      if (!newCustomer.name || !newCustomer.phone) {
-        toast.error('Please enter Name and Phone contact!');
+      if (!newCustomer.firstName || !newCustomer.lastName || !newCustomer.phone) {
+        toast.error('Please enter First Name, Last Name and Phone contact!');
         return;
       }
+      const fullName = `${newCustomer.firstName} ${newCustomer.lastName}`;
       const created = {
         id: Date.now(),
-        name: newCustomer.name,
+        name: fullName,
         phone: newCustomer.phone,
         location: newCustomer.location || 'Lahore, PK',
+        address: newCustomer.address || 'N/A', // Captured Address Field
         balance: Number(newCustomer.balance) || 0,
         orders: Number(newCustomer.orders) || 0
       };
       setCustomers([created, ...customers]);
-      setNewCustomer({ name: '', phone: '', location: '', balance: '', orders: '' });
-      toast.success(`${created.name} added to directory!`);
+      setNewCustomer({ firstName: '', lastName: '', phone: '', location: '', address: '', balance: '', orders: '' });
+      toast.success(`${fullName} added to directory!`);
     } else {
-      if (!newRider.name || !newRider.phone || !newRider.vehicle) {
-        toast.error('Name, Phone and Vehicle fields are required.');
+      if (!newRider.firstName || !newRider.lastName || !newRider.phone || !newRider.vehicle) {
+        toast.error('First Name, Last Name, Phone and Vehicle fields are required.');
         return;
       }
+      const fullName = `${newRider.firstName} ${newRider.lastName}`;
       const createdRider = {
         id: Date.now(),
-        name: newRider.name,
+        name: fullName,
         phone: newRider.phone,
         vehicle: newRider.vehicle,
         status: newRider.status,
         completed: Number(newRider.completed) || 0
       };
       setDeliveryPersons([createdRider, ...deliveryPersons]);
-      setNewRider({ name: '', phone: '', vehicle: '', status: 'Idle', completed: '' });
-      toast.success(`Rider ${createdRider.name} registered into fleet!`);
+      setNewRider({ firstName: '', lastName: '', phone: '', vehicle: '', status: 'Idle', completed: '' });
+      toast.success(`Rider ${fullName} registered into fleet!`);
     }
     setShowAddModal(false);
   };
@@ -113,17 +118,16 @@ export default function CustomersPage() {
   const processedData = useMemo(() => {
     let dataset = activeSegment === 'customers' ? [...customers] : [...deliveryPersons];
 
-    // Search filter
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase();
       dataset = dataset.filter(item => 
         item.name.toLowerCase().includes(q) || 
         item.phone.includes(q) ||
-        (item.vehicle && item.vehicle.toLowerCase().includes(q))
+        (item.vehicle && item.vehicle.toLowerCase().includes(q)) ||
+        (item.address && item.address.toLowerCase().includes(q))
       );
     }
 
-    // Status filter
     if (statusFilter !== 'all') {
       if (activeSegment === 'customers') {
         if (statusFilter === 'outstanding') dataset = dataset.filter(c => c.balance !== 0);
@@ -134,7 +138,6 @@ export default function CustomersPage() {
       }
     }
 
-    // Sorting
     dataset.sort((a, b) => {
       if (sortBy === 'name') return a.name.localeCompare(b.name);
       if (activeSegment === 'customers') {
@@ -166,10 +169,9 @@ export default function CustomersPage() {
   return (
     <div className="space-y-6 antialiased">
       
-      {/* 👑 Interactive Top Stats Panel */}
+      {/* Interactive Top Stats Panel */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
-        {/* 1. Total Clients Card Button */}
         <div 
           onClick={() => handleStatCardClick('customers', 'all')}
           className={`bg-[#111C2E] border rounded-2xl p-4 flex items-center gap-4 shadow-lg cursor-pointer transition-all active:scale-[0.97] hover:bg-[#17263C]/40 ${
@@ -187,7 +189,6 @@ export default function CustomersPage() {
           </div>
         </div>
 
-        {/* 2. Net Outstanding Card Button */}
         <div 
           onClick={() => handleStatCardClick('customers', 'outstanding')}
           className={`bg-[#111C2E] border rounded-2xl p-4 flex items-center gap-4 shadow-lg cursor-pointer transition-all active:scale-[0.97] hover:bg-[#17263C]/40 ${
@@ -205,7 +206,6 @@ export default function CustomersPage() {
           </div>
         </div>
 
-        {/* 3. On-Route Fleet Card Button */}
         <div 
           onClick={() => handleStatCardClick('delivery', 'on-delivery')}
           className={`bg-[#111C2E] border rounded-2xl p-4 flex items-center gap-4 shadow-lg cursor-pointer transition-all active:scale-[0.97] hover:bg-[#17263C]/40 ${
@@ -223,7 +223,6 @@ export default function CustomersPage() {
           </div>
         </div>
 
-        {/* 4. Transit Available Card Button */}
         <div 
           onClick={() => handleStatCardClick('delivery', 'idle')}
           className={`bg-[#111C2E] border rounded-2xl p-4 flex items-center gap-4 shadow-lg cursor-pointer transition-all active:scale-[0.97] hover:bg-[#17263C]/40 ${
@@ -278,23 +277,21 @@ export default function CustomersPage() {
         </button>
       </div>
 
-      {/* 🔍 Interactive Search & Filter Deck */}
+      {/* Interactive Search & Filter Deck */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-        {/* Search */}
         <div className="relative md:col-span-5">
           <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
             <Search size={16} className="text-[#9FB6D4]/50" />
           </span>
           <input
             type="text"
-            placeholder={`Search by name, contact info...`}
+            placeholder={`Search by name, address, contact info...`}
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
             className="w-full bg-[#111C2E] border border-[#28415F] rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-[#9FB6D4]/30 focus:outline-none focus:border-[#4EA5FF] transition-all shadow-inner"
           />
         </div>
 
-        {/* Status Filter */}
         <div className="flex items-center gap-2 md:col-span-3.5 bg-[#111C2E] border border-[#28415F] rounded-xl px-3 py-2">
           <Filter size={14} className="text-[#9FB6D4]/60" />
           <span className="text-[9px] uppercase font-bold text-[#9FB6D4] tracking-wider mr-1">Status:</span>
@@ -318,7 +315,6 @@ export default function CustomersPage() {
           </select>
         </div>
 
-        {/* Sort By */}
         <div className="flex items-center gap-2 md:col-span-3.5 bg-[#111C2E] border border-[#28415F] rounded-xl px-3 py-2">
           <ArrowUpDown size={14} className="text-[#9FB6D4]/60" />
           <span className="text-[9px] uppercase font-bold text-[#9FB6D4] tracking-wider mr-1">Sort:</span>
@@ -342,7 +338,7 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      {/* 📊 Data Grid Table */}
+      {/* Data Grid Table */}
       <div className="bg-[#111C2E] border border-[#28415F] rounded-2xl overflow-hidden shadow-2xl relative">
         {activeSegment === 'customers' ? (
           /* CUSTOMERS LOG */
@@ -407,11 +403,11 @@ export default function CustomersPage() {
                         </button>
 
                         {activeRowDropdown === cust.id && (
-                          <div className="absolute right-4 mt-1 w-36 bg-[#111C2E] border border-[#28415F] rounded-xl shadow-2xl py-1.5 z-40 text-left">
-                            <button onClick={() => toast.success(`Balance: PKR ${cust.balance}`)} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-[#17263C] text-[#9FB6D4] hover:text-white">
+                          <div className="absolute right-4 mt-1 w-40 bg-[#111C2E] border border-[#28415F] rounded-xl shadow-2xl py-1.5 z-40 text-left">
+                            <button onClick={() => { setViewUserModal({ ...cust, type: 'customer' }); setActiveRowDropdown(null); }} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-[#17263C] text-[#9FB6D4] hover:text-white cursor-pointer">
                               <Eye size={12} /> View Details
                             </button>
-                            <button onClick={() => handleDeleteItem(cust.id, 'customers')} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-[#FF5C5C]/10 text-[#FF5C5C]">
+                            <button onClick={() => handleDeleteItem(cust.id, 'customers')} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-[#FF5C5C]/10 text-[#FF5C5C] cursor-pointer">
                               <Trash2 size={12} /> Delete Record
                             </button>
                           </div>
@@ -487,11 +483,11 @@ export default function CustomersPage() {
                         </button>
 
                         {activeRowDropdown === rider.id && (
-                          <div className="absolute right-4 mt-1 w-36 bg-[#111C2E] border border-[#28415F] rounded-xl shadow-2xl py-1.5 z-40 text-left">
-                            <button onClick={() => toast.success(`Vehicle: ${rider.vehicle}`)} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-[#17263C] text-[#9FB6D4] hover:text-white">
+                          <div className="absolute right-4 mt-1 w-40 bg-[#111C2E] border border-[#28415F] rounded-xl shadow-2xl py-1.5 z-40 text-left">
+                            <button onClick={() => { setViewUserModal({ ...rider, type: 'rider' }); setActiveRowDropdown(null); }} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-[#17263C] text-[#9FB6D4] hover:text-white cursor-pointer">
                               <Eye size={12} /> View Details
                             </button>
-                            <button onClick={() => handleDeleteItem(rider.id, 'delivery')} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-[#FF5C5C]/10 text-[#FF5C5C]">
+                            <button onClick={() => handleDeleteItem(rider.id, 'delivery')} className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-[#FF5C5C]/10 text-[#FF5C5C] cursor-pointer">
                               <Trash2 size={12} /> Remove Rider
                             </button>
                           </div>
@@ -512,7 +508,7 @@ export default function CustomersPage() {
           </div>
         )}
 
-        {/* 🔢 Unified Pagination Footer */}
+        {/* Unified Pagination Footer */}
         {totalPages > 1 && (
           <div className="bg-[#090E17]/40 border-t border-[#28415F] p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             <span className="text-xs text-[#9FB6D4]">
@@ -556,7 +552,7 @@ export default function CustomersPage() {
         )}
       </div>
 
-      {/* --- ADD MODAL --- */}
+      {/* --- ADD MODAL WITH ADDRESS FIELD --- */}
       {showAddModal && (
         <div className="fixed inset-0 bg-[#090E17]/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-[#111C2E] border border-[#28415F] rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl relative">
@@ -574,16 +570,29 @@ export default function CustomersPage() {
             <form onSubmit={handleAddSubmit} className="space-y-4">
               {activeSegment === 'customers' ? (
                 <>
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-[#9FB6D4] mb-1.5">Client Full Name</label>
-                    <input
-                      type="text"
-                      required
-                      value={newCustomer.name}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
-                      placeholder="e.g., Kashif Khan"
-                      className="w-full bg-[#090E17] border border-[#28415F] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#4EA5FF]"
-                    />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-[#9FB6D4] mb-1.5">First Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={newCustomer.firstName}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, firstName: e.target.value })}
+                        placeholder="e.g., Kashif"
+                        className="w-full bg-[#090E17] border border-[#28415F] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#4EA5FF]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-[#9FB6D4] mb-1.5">Last Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={newCustomer.lastName}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, lastName: e.target.value })}
+                        placeholder="e.g., Khan"
+                        className="w-full bg-[#090E17] border border-[#28415F] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#4EA5FF]"
+                      />
+                    </div>
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold uppercase tracking-wider text-[#9FB6D4] mb-1.5">Phone Contact</label>
@@ -593,6 +602,17 @@ export default function CustomersPage() {
                       value={newCustomer.phone}
                       onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
                       placeholder="e.g., +92 312 3456789"
+                      className="w-full bg-[#090E17] border border-[#28415F] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#4EA5FF]"
+                    />
+                  </div>
+                  {/* Street Address Field Included */}
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-[#9FB6D4] mb-1.5">Street Address</label>
+                    <input
+                      type="text"
+                      value={newCustomer.address}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })}
+                      placeholder="e.g., House 123, Street 4, Block A"
                       className="w-full bg-[#090E17] border border-[#28415F] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#4EA5FF]"
                     />
                   </div>
@@ -621,40 +641,51 @@ export default function CustomersPage() {
                 </>
               ) : (
                 <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-[#9FB6D4] mb-1.5">First Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={newRider.firstName}
+                        onChange={(e) => setNewRider({ ...newRider, firstName: e.target.value })}
+                        placeholder="e.g., Majid"
+                        className="w-full bg-[#090E17] border border-[#28415F] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#4EA5FF]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-[#9FB6D4] mb-1.5">Last Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={newRider.lastName}
+                        onChange={(e) => setNewRider({ ...newRider, lastName: e.target.value })}
+                        placeholder="e.g., Butt"
+                        className="w-full bg-[#090E17] border border-[#28415F] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#4EA5FF]"
+                      />
+                    </div>
+                  </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-[#9FB6D4] mb-1.5">Rider Full Name</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-[#9FB6D4] mb-1.5">Phone Contact</label>
                     <input
                       type="text"
                       required
-                      value={newRider.name}
-                      onChange={(e) => setNewRider({ ...newRider, name: e.target.value })}
-                      placeholder="e.g., Majid Butt"
+                      value={newRider.phone}
+                      onChange={(e) => setNewRider({ ...newRider, phone: e.target.value })}
+                      placeholder="e.g., +92 300 1122334"
                       className="w-full bg-[#090E17] border border-[#28415F] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#4EA5FF]"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-[#9FB6D4] mb-1.5">Phone Contact</label>
-                      <input
-                        type="text"
-                        required
-                        value={newRider.phone}
-                        onChange={(e) => setNewRider({ ...newRider, phone: e.target.value })}
-                        placeholder="e.g., +92 300 1122334"
-                        className="w-full bg-[#090E17] border border-[#28415F] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#4EA5FF]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-[#9FB6D4] mb-1.5">Assigned Vehicle</label>
-                      <input
-                        type="text"
-                        required
-                        value={newRider.vehicle}
-                        onChange={(e) => setNewRider({ ...newRider, vehicle: e.target.value })}
-                        placeholder="e.g., Cargo Bike (KH-99)"
-                        className="w-full bg-[#090E17] border border-[#28415F] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#4EA5FF]"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-[#9FB6D4] mb-1.5">Assigned Vehicle</label>
+                    <input
+                      type="text"
+                      required
+                      value={newRider.vehicle}
+                      onChange={(e) => setNewRider({ ...newRider, vehicle: e.target.value })}
+                      placeholder="e.g., Cargo Bike (KH-99)"
+                      className="w-full bg-[#090E17] border border-[#28415F] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#4EA5FF]"
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -662,7 +693,7 @@ export default function CustomersPage() {
                       <select
                         value={newRider.status}
                         onChange={(e) => setNewRider({ ...newRider, status: e.target.value })}
-                        className="w-full bg-[#090E17] border border-[#28415F] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none"
+                        className="w-full bg-[#090E17] border border-[#28415F] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none cursor-pointer"
                       >
                         <option value="Idle">Idle (Standby)</option>
                         <option value="On Delivery">On Active Delivery</option>
@@ -675,7 +706,7 @@ export default function CustomersPage() {
                         value={newRider.completed}
                         onChange={(e) => setNewRider({ ...newRider, completed: e.target.value })}
                         placeholder="e.g., 5"
-                        className="w-full bg-[#090E17] border border-[#28415F] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none"
+                        className="w-full bg-[#090E17] border border-[#28415F] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#4EA5FF]"
                       />
                     </div>
                   </div>
@@ -686,18 +717,95 @@ export default function CustomersPage() {
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="bg-[#17263C] text-white hover:bg-[#28415F] font-bold text-xs uppercase tracking-wider py-2.5 px-4 rounded-xl transition-all"
+                  className="bg-[#17263C] text-white hover:bg-[#28415F] font-bold text-xs uppercase tracking-wider py-2.5 px-4 rounded-xl transition-all cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-[#4EA5FF] hover:bg-[#33D1FF] text-[#090E17] font-black text-xs uppercase tracking-wider py-2.5 px-6 rounded-xl transition-all shadow-md"
+                  className="bg-[#4EA5FF] hover:bg-[#33D1FF] text-[#090E17] font-black text-xs uppercase tracking-wider py-2.5 px-6 rounded-xl transition-all shadow-md cursor-pointer"
                 >
                   Confirm Entry
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- VIEW DETAILS POPUP MODAL --- */}
+      {viewUserModal && (
+        <div className="fixed inset-0 bg-[#090E17]/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-[#111C2E] border border-[#28415F] rounded-3xl w-full max-w-md p-6 space-y-6 shadow-2xl relative">
+            <div className="flex items-center justify-between pb-4 border-b border-[#28415F]/40">
+              <h3 className="text-sm font-black text-white uppercase tracking-wider">
+                Profile Details
+              </h3>
+              <button 
+                onClick={() => setViewUserModal(null)}
+                className="p-1.5 bg-[#090E17] text-[#9FB6D4] hover:text-white rounded-xl border border-[#28415F] transition-colors cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="bg-[#090E17] p-4 rounded-2xl border border-[#28415F] space-y-3">
+                <div className="flex justify-between border-b border-[#28415F]/30 pb-2">
+                  <span className="text-[#9FB6D4]">Full Name:</span>
+                  <span className="text-white font-bold">{viewUserModal.name}</span>
+                </div>
+                <div className="flex justify-between border-b border-[#28415F]/30 pb-2">
+                  <span className="text-[#9FB6D4]">Contact Phone:</span>
+                  <span className="text-white font-bold font-mono">{viewUserModal.phone}</span>
+                </div>
+
+                {viewUserModal.type === 'customer' ? (
+                  <>
+                    <div className="flex justify-between border-b border-[#28415F]/30 pb-2">
+                      <span className="text-[#9FB6D4]">Location / City:</span>
+                      <span className="text-white font-bold">{viewUserModal.location}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-[#28415F]/30 pb-2">
+                      <span className="text-[#9FB6D4]">Street Address:</span>
+                      <span className="text-white font-bold">{viewUserModal.address || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-[#28415F]/30 pb-2">
+                      <span className="text-[#9FB6D4]">Total Orders:</span>
+                      <span className="text-white font-bold font-mono">{viewUserModal.orders}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#9FB6D4]">Ledger Balance:</span>
+                      <span className={`font-bold font-mono ${viewUserModal.balance >= 0 ? 'text-[#36D399]' : 'text-[#FF5C5C]'}`}>
+                        PKR {viewUserModal.balance}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex justify-between border-b border-[#28415F]/30 pb-2">
+                      <span className="text-[#9FB6D4]">Assigned Vehicle:</span>
+                      <span className="text-white font-bold font-mono">{viewUserModal.vehicle}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-[#28415F]/30 pb-2">
+                      <span className="text-[#9FB6D4]">Deployment Status:</span>
+                      <span className="text-[#36D399] font-bold">{viewUserModal.status}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#9FB6D4]">Completed Runs:</span>
+                      <span className="text-white font-bold font-mono">{viewUserModal.completed} trips</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setViewUserModal(null)}
+              className="w-full bg-[#4EA5FF] hover:bg-[#33D1FF] text-[#090E17] font-black text-xs uppercase tracking-widest py-3 rounded-xl transition-all cursor-pointer"
+            >
+              Close Profile
+            </button>
           </div>
         </div>
       )}

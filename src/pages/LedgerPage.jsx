@@ -1,286 +1,252 @@
-import { useMemo, useState } from "react";
-import { Plus, TrendingUp, TrendingDown, Wallet, Trash2, X } from "lucide-react";
-import seedLedger from "../data/ledger";
-import seedCustomers from "../data/customers";
-import { useAuth } from "../context/AuthContext";
+import React, { useState, useMemo } from 'react';
+import { Plus, Download, Filter, Search, CheckCircle, Clock, Trash2, X } from 'lucide-react';
 
-function formatCurrency(amount) {
-  return new Intl.NumberFormat("en-PK", {
-    style: "currency",
-    currency: "PKR",
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
-function formatDate(iso) {
-  return new Date(iso).toLocaleString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-export default function LedgerPage() {
-  const { user, permissions } = useAuth();
-  const [entries, setEntries] = useState(seedLedger);
+export default function LedgersPage() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [modalOpen, setModalOpen] = useState(false);
+  
+  const [ledgers, setLedgers] = useState([
+    { id: 'TXN-9081', party: 'Faiza Malik', transaction: 'Credit Received', amount: 'PKR 12,500', status: 'Completed' },
+    { id: 'TXN-9082', party: 'Zainab Ahmed', transaction: 'Outstanding Debit', amount: 'PKR 3,200', status: 'Pending' },
+    { id: 'TXN-9083', party: 'Sajid Khan', transaction: 'Rider Allowance', amount: 'PKR 1,500', status: 'Completed' },
+    { id: 'TXN-9084', party: 'Asad Ali', transaction: 'Settled Ledger', amount: 'PKR 8,000', status: 'Completed' },
+    { id: 'TXN-9085', party: 'Sana Qureshi', transaction: 'Outstanding Debit', amount: 'PKR 1,500', status: 'Pending' },
+  ]);
+
   const [form, setForm] = useState({
-    customerId: seedCustomers[0]?.id ?? "",
-    type: "credit",
-    amount: "",
-    note: "",
+    party: '',
+    transaction: 'Credit Received',
+    amount: '',
+    status: 'Completed'
   });
 
-  const totals = useMemo(() => {
-    const credit = entries
-      .filter((e) => e.type === "credit")
-      .reduce((sum, e) => sum + e.amount, 0);
-    const debit = entries
-      .filter((e) => e.type === "debit")
-      .reduce((sum, e) => sum + e.amount, 0);
-    return { credit, debit, net: credit - debit };
-  }, [entries]);
+  const filteredLedgers = useMemo(() => {
+    return ledgers.filter((item) => {
+      const matchesSearch = 
+        item.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.party.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.transaction.toLowerCase().includes(searchQuery.toLowerCase());
 
-  const openModal = () => {
-    setForm({ customerId: seedCustomers[0]?.id ?? "", type: "credit", amount: "", note: "" });
-    setModalOpen(true);
-  };
+      const matchesStatus = 
+        statusFilter === 'all' || item.status.toLowerCase() === statusFilter.toLowerCase();
 
-  const closeModal = () => setModalOpen(false);
+      return matchesSearch && matchesStatus;
+    });
+  }, [searchQuery, statusFilter, ledgers]);
 
-  const handleSubmit = (e) => {
+  const handleAddTransaction = (e) => {
     e.preventDefault();
-    if (!permissions?.canManageLedger) return;
-
-    const customer = seedCustomers.find((c) => c.id === form.customerId);
     const newEntry = {
-      id: `TXN-${1000 + entries.length + 1}`,
-      customerId: form.customerId,
-      customerName: customer?.name ?? "Unknown",
-      type: form.type,
-      amount: Number(form.amount),
-      note: form.note,
-      recordedBy: user?.name ?? "Unknown",
-      date: new Date().toISOString(),
+      id: `TXN-${9000 + ledgers.length + 1}`,
+      party: form.party,
+      transaction: form.transaction,
+      amount: `PKR ${Number(form.amount).toLocaleString()}`,
+      status: form.status,
     };
-    setEntries((prev) => [newEntry, ...prev]);
-    closeModal();
+    setLedgers([newEntry, ...ledgers]);
+    setModalOpen(false);
+    setForm({ party: '', transaction: 'Credit Received', amount: '', status: 'Completed' });
   };
 
   const handleDelete = (id) => {
-    if (!permissions?.canDeleteLedgerEntries) return;
-    setEntries((prev) => prev.filter((e) => e.id !== id));
+    setLedgers(ledgers.filter(item => item.id !== id));
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="space-y-6 text-white max-w-7xl mx-auto px-4 py-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-ledger-700">
-            Admin Panel
-          </p>
-          <h1 className="font-display text-2xl font-semibold text-ink sm:text-3xl">
-            Ledger Management
-          </h1>
-          <p className="mt-1.5 text-sm text-ink-soft">
-            {entries.length} recorded transactions
-          </p>
-        </div>
-
-        {permissions?.canManageLedger && (
-          <button
-            type="button"
-            onClick={openModal}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-ledger-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-ledger-700"
-          >
-            <Plus className="h-4 w-4" strokeWidth={2.5} />
-            Add Transaction
-          </button>
-        )}
-      </header>
-
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
-          <div className="mb-2 flex items-center gap-2 text-green-700">
-            <TrendingUp className="h-4 w-4" strokeWidth={2.5} />
-            <p className="text-xs font-semibold uppercase tracking-wide">Total Credit</p>
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-2xl font-black tracking-tight text-white">Ledgers</h1>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#1e293b] text-[#38bdf8] border border-[#334155]">ADMIN</span>
           </div>
-          <p className="text-xl font-semibold text-ink">{formatCurrency(totals.credit)}</p>
+          <p className="text-xs text-slate-400">Transaction audit trail.</p>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
-          <div className="mb-2 flex items-center gap-2 text-red-700">
-            <TrendingDown className="h-4 w-4" strokeWidth={2.5} />
-            <p className="text-xs font-semibold uppercase tracking-wide">Total Debit</p>
-          </div>
-          <p className="text-xl font-semibold text-ink">{formatCurrency(totals.debit)}</p>
-        </div>
-
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
-          <div className="mb-2 flex items-center gap-2 text-ledger-700">
-            <Wallet className="h-4 w-4" strokeWidth={2.5} />
-            <p className="text-xs font-semibold uppercase tracking-wide">Net Balance</p>
-          </div>
-          <p className="text-xl font-semibold text-ink">{formatCurrency(totals.net)}</p>
-        </div>
+        <button
+          onClick={() => setModalOpen(true)}
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-lg cursor-pointer"
+        >
+          <Plus size={16} /> Add Transaction
+        </button>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-gray-50 text-xs uppercase text-ink-soft">
-            <tr>
-              <th className="px-4 py-3">Customer</th>
-              <th className="px-4 py-3">Type</th>
-              <th className="px-4 py-3">Amount</th>
-              <th className="px-4 py-3">Note</th>
-              <th className="px-4 py-3">Recorded By</th>
-              <th className="px-4 py-3">Date</th>
-              {permissions?.canDeleteLedgerEntries && <th className="px-4 py-3" />}
-            </tr>
-          </thead>
-          <tbody>
-            {entries.length === 0 ? (
+      {/* Main Content Box */}
+      <div className="bg-[#111C2E] border border-[#1e293b] rounded-2xl shadow-xl overflow-hidden p-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          
+          {/* Search Bar */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input 
+              type="text"
+              placeholder="Search logs..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-[#17263C] border border-[#28415F] rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-[#4EA5FF]"
+            />
+          </div>
+
+          {/* Filters & Export */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2 bg-[#17263C] border border-[#28415F] px-3.5 py-2 rounded-xl text-xs text-slate-300">
+              <Filter size={14} className="text-[#4EA5FF]" />
+              <select 
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="bg-transparent text-white outline-none cursor-pointer"
+              >
+                <option value="all" className="bg-[#111C2E]">All Ledgers Log</option>
+                <option value="completed" className="bg-[#111C2E]">Completed</option>
+                <option value="pending" className="bg-[#111C2E]">Pending</option>
+              </select>
+            </div>
+
+            <button 
+              onClick={() => alert('Exporting audit logs to CSV...')}
+              className="flex items-center gap-2 bg-[#17263C] border border-[#28415F] hover:bg-[#203450] text-slate-200 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+            >
+              <Download size={14} /> Export CSV
+            </button>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-[#17263C]/50 uppercase tracking-wider text-slate-400 border-b border-[#28415F]">
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-ink-soft">
-                  No transactions recorded yet
-                </td>
+                <th className="px-4 py-3.5 font-semibold">Reference ID</th>
+                <th className="px-4 py-3.5 font-semibold">Account Party</th>
+                <th className="px-4 py-3.5 font-semibold">Transaction</th>
+                <th className="px-4 py-3.5 font-semibold">Amount</th>
+                <th className="px-4 py-3.5 font-semibold">Status</th>
+                <th className="px-4 py-3.5 text-right">Actions</th>
               </tr>
-            ) : (
-              entries.map((entry) => (
-                <tr key={entry.id} className="border-t border-gray-100">
-                  <td className="px-4 py-3 font-medium text-ink">{entry.customerName}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${
-                        entry.type === "credit"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {entry.type === "credit" ? "Credit" : "Debit"}
-                    </span>
+            </thead>
+            <tbody className="divide-y divide-[#1e293b]">
+              {filteredLedgers.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-12 text-center text-slate-400">
+                    No transaction logs found.
                   </td>
-                  <td className="px-4 py-3 text-ink">{formatCurrency(entry.amount)}</td>
-                  <td className="px-4 py-3 text-ink-soft">{entry.note || "—"}</td>
-                  <td className="px-4 py-3 text-ink-soft">{entry.recordedBy}</td>
-                  <td className="px-4 py-3 text-ink-soft">{formatDate(entry.date)}</td>
-                  {permissions?.canDeleteLedgerEntries && (
-                    <td className="px-4 py-3 text-right">
+                </tr>
+              ) : (
+                filteredLedgers.map((log) => (
+                  <tr key={log.id} className="hover:bg-[#17263C]/30 transition-colors">
+                    <td className="px-4 py-4 font-mono font-bold text-[#4EA5FF]">{log.id}</td>
+                    <td className="px-4 py-4 font-bold text-white">{log.party}</td>
+                    <td className="px-4 py-4 text-slate-300">{log.transaction}</td>
+                    <td className="px-4 py-4 font-mono font-bold text-white">{log.amount}</td>
+                    <td className="px-4 py-4">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold ${
+                        log.status === 'Completed' 
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                          : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                      }`}>
+                        {log.status === 'Completed' ? <CheckCircle size={10} /> : <Clock size={10} />}
+                        {log.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-right">
                       <button
-                        onClick={() => handleDelete(entry.id)}
-                        className="text-ink-soft hover:text-red-600"
+                        onClick={() => handleDelete(log.id)}
+                        className="text-slate-400 hover:text-red-400 transition cursor-pointer"
                       >
-                        <Trash2 className="h-4 w-4" strokeWidth={2} />
+                        <Trash2 size={14} />
                       </button>
                     </td>
-                  )}
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
+      {/* Add Transaction Modal */}
       {modalOpen && (
-        <>
-          <div className="fixed inset-0 z-40 bg-black/50" onClick={closeModal} />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="w-full max-w-md rounded-lg bg-white shadow-lg">
-              <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-                <h2 className="text-lg font-semibold text-ink">Add Transaction</h2>
-                <button onClick={closeModal} className="text-ink-soft hover:text-ink">
-                  <X className="h-5 w-5" strokeWidth={2} />
-                </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-[#111C2E] border border-[#1e293b] rounded-2xl shadow-2xl p-6 text-white">
+            <div className="flex items-center justify-between border-b border-[#1e293b] pb-4 mb-4">
+              <h2 className="text-base font-bold">Add New Transaction</h2>
+              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-white cursor-pointer">
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddTransaction} className="space-y-4">
+              <div>
+                <label className="block text-[11px] font-medium text-slate-300 mb-1">Account Party Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Ali Ahmed"
+                  value={form.party}
+                  onChange={(e) => setForm({ ...form, party: e.target.value })}
+                  className="w-full bg-[#17263C] border border-[#28415F] rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-[#4EA5FF]"
+                />
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4 px-6 py-4">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-ink-soft">Customer</label>
-                  <select
-                    required
-                    value={form.customerId}
-                    onChange={(e) => setForm((f) => ({ ...f, customerId: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-ink outline-none focus:border-ledger-600"
-                  >
-                    {seedCustomers.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-300 mb-1">Transaction Type</label>
+                <select
+                  value={form.transaction}
+                  onChange={(e) => setForm({ ...form, transaction: e.target.value })}
+                  className="w-full bg-[#17263C] border border-[#28415F] rounded-xl px-3.5 py-2.5 text-xs text-white outline-none cursor-pointer"
+                >
+                  <option value="Credit Received">Credit Received</option>
+                  <option value="Outstanding Debit">Outstanding Debit</option>
+                  <option value="Rider Allowance">Rider Allowance</option>
+                  <option value="Settled Ledger">Settled Ledger</option>
+                </select>
+              </div>
 
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-ink-soft">Type</label>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setForm((f) => ({ ...f, type: "credit" }))}
-                      className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition ${
-                        form.type === "credit"
-                          ? "border-green-600 bg-green-50 text-green-800"
-                          : "border-gray-300 text-ink-soft"
-                      }`}
-                    >
-                      Credit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setForm((f) => ({ ...f, type: "debit" }))}
-                      className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition ${
-                        form.type === "debit"
-                          ? "border-red-600 bg-red-50 text-red-800"
-                          : "border-gray-300 text-ink-soft"
-                      }`}
-                    >
-                      Debit
-                    </button>
-                  </div>
-                </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-300 mb-1">Amount (PKR)</label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  placeholder="e.g. 5000"
+                  value={form.amount}
+                  onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                  className="w-full bg-[#17263C] border border-[#28415F] rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-[#4EA5FF]"
+                />
+              </div>
 
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-ink-soft">Amount</label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    value={form.amount}
-                    onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-ink outline-none focus:border-ledger-600"
-                  />
-                </div>
+              <div>
+                <label className="block text-[11px] font-medium text-slate-300 mb-1">Status</label>
+                <select
+                  value={form.status}
+                  onChange={(e) => setForm({ ...form, status: e.target.value })}
+                  className="w-full bg-[#17263C] border border-[#28415F] rounded-xl px-3.5 py-2.5 text-xs text-white outline-none cursor-pointer"
+                >
+                  <option value="Completed">Completed</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </div>
 
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-ink-soft">Note</label>
-                  <input
-                    type="text"
-                    value={form.note}
-                    onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-ink outline-none focus:border-ledger-600"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2 border-t border-gray-200 pt-4">
-                  <button
-                    type="button"
-                    onClick={closeModal}
-                    className="rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="rounded-lg bg-ledger-600 px-4 py-2 text-sm font-medium text-white hover:bg-ledger-700"
-                  >
-                    Save Transaction
-                  </button>
-                </div>
-              </form>
-            </div>
+              <div className="flex justify-end gap-2.5 pt-4 border-t border-[#1e293b]">
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Save Transaction
+                </button>
+              </div>
+            </form>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

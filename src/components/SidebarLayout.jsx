@@ -69,6 +69,19 @@ export default function SidebarLayout({ activeTab, onTabChange, children }) {
             <span>Ledger Books</span>
           </button>
 
+          {/* Customer Wallets Tab (Added) */}
+          <button
+            onClick={() => onTabChange('wallets')}
+            className={`w-full flex items-center space-x-3 px-3 py-2.5 text-xs font-semibold rounded-xl transition-all ${
+              activeTab === 'wallets'
+                ? 'bg-slate-800 text-emerald-400 border border-slate-700/50 shadow-md'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-850/50'
+            }`}
+          >
+            <span>💳</span>
+            <span>Customer Wallets</span>
+          </button>
+
           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 pt-6 mb-2">Management</div>
 
           {/* Account Settings Tab */}

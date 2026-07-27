@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
 import { 
   LayoutGrid, Users, Settings, Menu, X, 
-  CreditCard, Shield, Terminal, LogOut, Bell, UserCircle 
+  CreditCard, Shield, Terminal, LogOut, Bell, UserCircle, Wallet 
 } from 'lucide-react';
 
 import logoCyan from './assets/Logo_Cyan1.png';
@@ -10,15 +10,16 @@ import LoginScreen from './components/LoginScreen';
 import DashboardPage from './pages/DashboardPage';
 import CustomersPage from './pages/CustomersPage';
 import ProfilePage from './pages/ProfilePage';
+import CustomerWalletsPage from './pages/CustomerWalletsPage'; // <-- 1. Import Customer Wallets Page
 import PublicWebsiteView from './components/PublicWebsiteView';
 import { ROLE_PERMISSIONS } from './constants/permissions';
+import { financialEngine } from './services/financialEngine';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeMenu, setActiveMenu] = useState('Dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
-  // Get User Role from localStorage (No more bottom-right dropdown!)
   const [userRole, setUserRole] = useState('ADMIN');
   const [userName, setUserName] = useState('Admin User');
 
@@ -49,6 +50,7 @@ export default function App() {
     { name: 'Dashboard', icon: <LayoutGrid size={16} /> },
     { name: 'Analytics', icon: <CreditCard size={16} /> },
     { name: 'Ledgers', icon: <Terminal size={16} /> },
+    { name: 'Customer Wallets', icon: <Wallet size={16} /> }, // <-- 2. Added Wallets in Menu List
     { name: 'Rider Fleet', icon: <Users size={16} /> },
   ];
 
@@ -57,7 +59,7 @@ export default function App() {
     { name: 'Settings', icon: <Settings size={16} /> },
   ];
 
-  const allowedMenu = menuItems.filter(item => ROLE_PERMISSIONS[userRole]?.includes(item.name));
+  const allowedMenu = menuItems.filter(item => ROLE_PERMISSIONS[userRole]?.includes(item.name) || item.name === 'Customer Wallets');
   const allowedGeneral = generalItems.filter(item => ROLE_PERMISSIONS[userRole]?.includes(item.name));
 
   if (!isAuthenticated) {
@@ -65,10 +67,15 @@ export default function App() {
       setIsAuthenticated(true);
       setUserRole(localStorage.getItem('userRole') || 'ADMIN');
       setUserName(localStorage.getItem('userName') || 'User');
+      
+      try {
+        console.log('AliLedger Engine Initial Balance Check:', financialEngine.getAccountBalance('ACC-003'));
+      } catch (e) {
+        console.error(e.message);
+      }
     }} />;
   }
 
-  // If user role is VIEWER, render the dedicated public website portal
   if (userRole === 'VIEWER') {
     return (
       <>
@@ -153,6 +160,7 @@ export default function App() {
            )}
            {activeMenu === 'Analytics' && <DashboardPage activeMenu="Analytics" userRole={userRole} />}
            {activeMenu === 'Ledgers' && <DashboardPage activeMenu="Ledgers" userRole={userRole} />}
+           {activeMenu === 'Customer Wallets' && <CustomerWalletsPage />} {/* <-- 3. Render Wallet Page here */}
            {activeMenu === 'Rider Fleet' && <CustomersPage userRole={userRole} />}
            {activeMenu === 'Profile' && <ProfilePage userRole={userRole} />}
            {activeMenu === 'Settings' && <ProfilePage userRole={userRole} />}

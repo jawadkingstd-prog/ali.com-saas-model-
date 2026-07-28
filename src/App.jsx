@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
 import { 
   LayoutGrid, Users, Settings, Menu, X, 
-  CreditCard, Shield, Terminal, LogOut, Bell, UserCircle, Wallet 
+  CreditCard, Shield, Terminal, LogOut, Bell, UserCircle, Wallet, Truck 
 } from 'lucide-react';
 
 import logoCyan from './assets/Logo_Cyan1.png';
@@ -10,7 +10,8 @@ import LoginScreen from './components/LoginScreen';
 import DashboardPage from './pages/DashboardPage';
 import CustomersPage from './pages/CustomersPage';
 import ProfilePage from './pages/ProfilePage';
-import CustomerWalletsPage from './pages/CustomerWalletsPage'; // <-- 1. Import Customer Wallets Page
+import CustomerWalletsPage from './pages/CustomerWalletsPage';
+import RiderFleetPage from './pages/RiderFleetPage'; // <-- 1. Import Rider Fleet Page
 import PublicWebsiteView from './components/PublicWebsiteView';
 import { ROLE_PERMISSIONS } from './constants/permissions';
 import { financialEngine } from './services/financialEngine';
@@ -50,8 +51,8 @@ export default function App() {
     { name: 'Dashboard', icon: <LayoutGrid size={16} /> },
     { name: 'Analytics', icon: <CreditCard size={16} /> },
     { name: 'Ledgers', icon: <Terminal size={16} /> },
-    { name: 'Customer Wallets', icon: <Wallet size={16} /> }, // <-- 2. Added Wallets in Menu List
-    { name: 'Rider Fleet', icon: <Users size={16} /> },
+    { name: 'Customer Wallets', icon: <Wallet size={16} /> },
+    { name: 'Rider Fleet', icon: <Truck size={16} /> }, // <-- 2. Updated Rider Fleet Icon & Menu
   ];
 
   const generalItems = [
@@ -59,7 +60,7 @@ export default function App() {
     { name: 'Settings', icon: <Settings size={16} /> },
   ];
 
-  const allowedMenu = menuItems.filter(item => ROLE_PERMISSIONS[userRole]?.includes(item.name) || item.name === 'Customer Wallets');
+  const allowedMenu = menuItems.filter(item => ROLE_PERMISSIONS[userRole]?.includes(item.name) || item.name === 'Customer Wallets' || item.name === 'Rider Fleet');
   const allowedGeneral = generalItems.filter(item => ROLE_PERMISSIONS[userRole]?.includes(item.name));
 
   if (!isAuthenticated) {
@@ -160,8 +161,8 @@ export default function App() {
            )}
            {activeMenu === 'Analytics' && <DashboardPage activeMenu="Analytics" userRole={userRole} />}
            {activeMenu === 'Ledgers' && <DashboardPage activeMenu="Ledgers" userRole={userRole} />}
-           {activeMenu === 'Customer Wallets' && <CustomerWalletsPage />} {/* <-- 3. Render Wallet Page here */}
-           {activeMenu === 'Rider Fleet' && <CustomersPage userRole={userRole} />}
+           {activeMenu === 'Customer Wallets' && <CustomerWalletsPage />}
+           {activeMenu === 'Rider Fleet' && <RiderFleetPage />} {/* <-- 3. Render Rider Fleet Page here */}
            {activeMenu === 'Profile' && <ProfilePage userRole={userRole} />}
            {activeMenu === 'Settings' && <ProfilePage userRole={userRole} />}
         </main>

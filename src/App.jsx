@@ -2,16 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
 import { 
   LayoutGrid, Users, Settings, Menu, X, 
-  CreditCard, Shield, Terminal, LogOut, Bell, UserCircle, Wallet, Truck 
+  CreditCard, Shield, Terminal, LogOut, Bell, UserCircle, Wallet, Truck, Zap 
 } from 'lucide-react';
 
 import logoCyan from './assets/Logo_Cyan1.png';
 import LoginScreen from './components/LoginScreen';
 import DashboardPage from './pages/DashboardPage';
 import CustomersPage from './pages/CustomersPage';
-import ProfilePage from './pages/ProfilePage';
+import ProfilePage from './pages/Profilepage';
 import CustomerWalletsPage from './pages/CustomerWalletsPage';
-import RiderFleetPage from './pages/RiderFleetPage'; // <-- 1. Import Rider Fleet Page
+import RiderFleetPage from './pages/RiderFleetPage';
+import CreditSubscriptionsPage from './pages/CreditSubscriptionsPage'; // <-- 1. Import Credit Subscriptions Page
 import PublicWebsiteView from './components/PublicWebsiteView';
 import { ROLE_PERMISSIONS } from './constants/permissions';
 import { financialEngine } from './services/financialEngine';
@@ -52,7 +53,8 @@ export default function App() {
     { name: 'Analytics', icon: <CreditCard size={16} /> },
     { name: 'Ledgers', icon: <Terminal size={16} /> },
     { name: 'Customer Wallets', icon: <Wallet size={16} /> },
-    { name: 'Rider Fleet', icon: <Truck size={16} /> }, // <-- 2. Updated Rider Fleet Icon & Menu
+    { name: 'Rider Fleet', icon: <Truck size={16} /> },
+    { name: 'Credit Subscriptions', icon: <Zap size={16} /> }, // <-- 2. Added Credit Subscriptions Menu
   ];
 
   const generalItems = [
@@ -60,7 +62,13 @@ export default function App() {
     { name: 'Settings', icon: <Settings size={16} /> },
   ];
 
-  const allowedMenu = menuItems.filter(item => ROLE_PERMISSIONS[userRole]?.includes(item.name) || item.name === 'Customer Wallets' || item.name === 'Rider Fleet');
+  const allowedMenu = menuItems.filter(item => 
+    ROLE_PERMISSIONS[userRole]?.includes(item.name) || 
+    item.name === 'Customer Wallets' || 
+    item.name === 'Rider Fleet' || 
+    item.name === 'Credit Subscriptions'
+  );
+  
   const allowedGeneral = generalItems.filter(item => ROLE_PERMISSIONS[userRole]?.includes(item.name));
 
   if (!isAuthenticated) {
@@ -162,7 +170,8 @@ export default function App() {
            {activeMenu === 'Analytics' && <DashboardPage activeMenu="Analytics" userRole={userRole} />}
            {activeMenu === 'Ledgers' && <DashboardPage activeMenu="Ledgers" userRole={userRole} />}
            {activeMenu === 'Customer Wallets' && <CustomerWalletsPage />}
-           {activeMenu === 'Rider Fleet' && <RiderFleetPage />} {/* <-- 3. Render Rider Fleet Page here */}
+           {activeMenu === 'Rider Fleet' && <RiderFleetPage />}
+           {activeMenu === 'Credit Subscriptions' && <CreditSubscriptionsPage />} {/* <-- 3. Render Credit Subscriptions Page */}
            {activeMenu === 'Profile' && <ProfilePage userRole={userRole} />}
            {activeMenu === 'Settings' && <ProfilePage userRole={userRole} />}
         </main>

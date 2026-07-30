@@ -16,7 +16,7 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer = null
     e.preventDefault();
 
     // 1. Validation & Error Popup
-    if (!formData.name.trim() || !formData.phone.trim()) {
+    if (!formData.nnpmame.trim() || !formData.phone.trim()) {
       toast.error('Name and Phone fields are required!', {
         style: { borderLeft: '4px solid #f43f5e' }
       });

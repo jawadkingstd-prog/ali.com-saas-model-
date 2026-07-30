@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { CreditCard, ShieldCheck, Zap, UserCheck, Plus, Search, Calendar, CheckCircle, Filter, Download, TrendingUp, Clock, AlertCircle, Edit2, Trash2, Eye, MoreVertical, ChevronUp, ChevronDown } from 'lucide-react';
+import { CreditCard, ShieldCheck, Zap, UserCheck, Plus, Search, Calendar, CheckCircle, Filter, Download, TrendingUp, Clock, AlertCircle, Edit2, Trash2, Eye, MoreVertical, ChevronUp, ChevronDown, Save, X } from 'lucide-react';
 
 export default function CreditSubscriptionsPagePro() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -22,6 +22,8 @@ export default function CreditSubscriptionsPagePro() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSub, setSelectedSub] = useState(null);
   const [editMode, setEditMode] = useState(false);
+  const [editData, setEditData] = useState(null);
+  const [viewDetails, setViewDetails] = useState(false);
 
   // Analytics
   const totalActive = subscriptions.filter(s => s.status === 'Active').length;
@@ -34,19 +36,16 @@ export default function CreditSubscriptionsPagePro() {
   const filteredSubs = useMemo(() => {
     let filtered = subscriptions;
 
-    // Status Filter
     if (filterStatus !== 'All') {
       filtered = filtered.filter(s => s.status === filterStatus);
     }
 
-    // Search Filter
     filtered = filtered.filter(s => 
       s.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.planName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.id.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    // Sort
     filtered.sort((a, b) => {
       let aVal, bVal;
 
@@ -113,6 +112,33 @@ export default function CreditSubscriptionsPagePro() {
     a.href = url;
     a.download = 'credit-subscriptions.csv';
     a.click();
+  };
+
+  // Handle View Details Button
+  const handleViewDetails = () => {
+    setViewDetails(true);
+    setEditMode(false);
+  };
+
+  // Handle Edit Plan Button
+  const handleEditPlan = () => {
+    setEditMode(true);
+    setViewDetails(false);
+    setEditData({ ...selectedSub });
+  };
+
+  // Handle Save Edit
+  const handleSaveEdit = () => {
+    setSubscriptions(subscriptions.map(s => s.id === editData.id ? editData : s));
+    setSelectedSub(editData);
+    setEditMode(false);
+    alert(`✅ Subscription updated successfully for ${editData.customerName}!`);
+  };
+
+  // Handle Cancel Edit
+  const handleCancelEdit = () => {
+    setEditMode(false);
+    setEditData(null);
   };
 
   return (
@@ -301,6 +327,7 @@ export default function CreditSubscriptionsPagePro() {
                           onClick={() => {
                             setSelectedSub(sub);
                             setEditMode(false);
+                            setViewDetails(false);
                             setModalOpen(true);
                           }}
                           className="bg-blue-600/20 border border-blue-500/30 hover:bg-blue-600 text-blue-300 hover:text-white px-3 py-1.5 rounded-lg font-bold text-[10px] transition"
@@ -363,11 +390,18 @@ export default function CreditSubscriptionsPagePro() {
             {/* Modal Header */}
             <div className="bg-gradient-to-r from-[#4EA5FF]/10 to-transparent border-b border-[#28415F] px-6 py-4 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold text-white">Manage Credit Subscription</h2>
+                <h2 className="text-lg font-bold text-white">
+                  {editMode ? 'Edit Subscription' : viewDetails ? 'Subscription Details' : 'Manage Credit Subscription'}
+                </h2>
                 <p className="text-xs text-slate-400 mt-1">{selectedSub.id} • {selectedSub.customerName}</p>
               </div>
               <button
-                onClick={() => setModalOpen(false)}
+                onClick={() => {
+                  setModalOpen(false);
+                  setEditMode(false);
+                  setViewDetails(false);
+                  handleCancelEdit();
+                }}
                 className="text-slate-400 hover:text-white transition text-2xl"
               >
                 ×
@@ -375,79 +409,191 @@ export default function CreditSubscriptionsPagePro() {
             </div>
 
             {/* Modal Content */}
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-[#17263C] p-4 rounded-xl border border-[#28415F]">
-                  <p className="text-xs text-slate-400 mb-1">Customer</p>
-                  <p className="text-sm font-bold text-white">{selectedSub.customerName}</p>
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+              {editMode ? (
+                // Edit Mode Form
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-2">Customer Name</label>
+                      <input
+                        type="text"
+                        value={editData?.customerName || ''}
+                        onChange={(e) => setEditData({ ...editData, customerName: e.target.value })}
+                        className="w-full bg-[#17263C] border border-[#28415F] text-white px-3 py-2 rounded-lg text-xs focus:outline-none focus:border-[#4EA5FF]"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-2">Plan Name</label>
+                      <input
+                        type="text"
+                        value={editData?.planName || ''}
+                        onChange={(e) => setEditData({ ...editData, planName: e.target.value })}
+                        className="w-full bg-[#17263C] border border-[#28415F] text-white px-3 py-2 rounded-lg text-xs focus:outline-none focus:border-[#4EA5FF]"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-2">Credit Limit</label>
+                      <input
+                        type="number"
+                        value={editData?.creditLimit || ''}
+                        onChange={(e) => setEditData({ ...editData, creditLimit: parseInt(e.target.value) })}
+                        className="w-full bg-[#17263C] border border-[#28415F] text-white px-3 py-2 rounded-lg text-xs focus:outline-none focus:border-[#4EA5FF]"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-2">Utilized Credit</label>
+                      <input
+                        type="number"
+                        value={editData?.utilizedCredit || ''}
+                        onChange={(e) => setEditData({ ...editData, utilizedCredit: parseInt(e.target.value) })}
+                        className="w-full bg-[#17263C] border border-[#28415F] text-white px-3 py-2 rounded-lg text-xs focus:outline-none focus:border-[#4EA5FF]"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-2">Billing Cycle</label>
+                      <select
+                        value={editData?.billingCycle || ''}
+                        onChange={(e) => setEditData({ ...editData, billingCycle: e.target.value })}
+                        className="w-full bg-[#17263C] border border-[#28415F] text-white px-3 py-2 rounded-lg text-xs focus:outline-none focus:border-[#4EA5FF]"
+                      >
+                        <option>Monthly</option>
+                        <option>Weekly</option>
+                        <option>Quarterly</option>
+                        <option>Annual</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-2">Status</label>
+                      <select
+                        value={editData?.status || ''}
+                        onChange={(e) => setEditData({ ...editData, status: e.target.value })}
+                        className="w-full bg-[#17263C] border border-[#28415F] text-white px-3 py-2 rounded-lg text-xs focus:outline-none focus:border-[#4EA5FF]"
+                      >
+                        <option>Active</option>
+                        <option>Suspended</option>
+                        <option>Expiring Soon</option>
+                      </select>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-xs text-slate-400 block mb-2">Renewal Date</label>
+                      <input
+                        type="date"
+                        value={editData?.renewalDate || ''}
+                        onChange={(e) => setEditData({ ...editData, renewalDate: e.target.value })}
+                        className="w-full bg-[#17263C] border border-[#28415F] text-white px-3 py-2 rounded-lg text-xs focus:outline-none focus:border-[#4EA5FF]"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-[#17263C] p-4 rounded-xl border border-[#28415F]">
-                  <p className="text-xs text-slate-400 mb-1">Plan</p>
-                  <p className="text-sm font-bold text-white">{selectedSub.planName}</p>
-                </div>
-                <div className="bg-[#17263C] p-4 rounded-xl border border-[#28415F]">
-                  <p className="text-xs text-slate-400 mb-1">Credit Limit</p>
-                  <p className="text-sm font-bold text-emerald-400">PKR {selectedSub.creditLimit.toLocaleString()}</p>
-                </div>
-                <div className="bg-[#17263C] p-4 rounded-xl border border-[#28415F]">
-                  <p className="text-xs text-slate-400 mb-1">Utilized</p>
-                  <p className="text-sm font-bold text-amber-400">PKR {selectedSub.utilizedCredit.toLocaleString()}</p>
-                </div>
-                <div className="bg-[#17263C] p-4 rounded-xl border border-[#28415F]">
-                  <p className="text-xs text-slate-400 mb-1">Billing Cycle</p>
-                  <p className="text-sm font-bold text-white">{selectedSub.billingCycle}</p>
-                </div>
-                <div className="bg-[#17263C] p-4 rounded-xl border border-[#28415F]">
-                  <p className="text-xs text-slate-400 mb-1">Next Billing</p>
-                  <p className="text-sm font-bold text-white">{selectedSub.nextBillingDate}</p>
-                </div>
-              </div>
+              ) : (
+                // View Mode
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-[#17263C] p-4 rounded-xl border border-[#28415F]">
+                      <p className="text-xs text-slate-400 mb-1">Customer</p>
+                      <p className="text-sm font-bold text-white">{selectedSub.customerName}</p>
+                    </div>
+                    <div className="bg-[#17263C] p-4 rounded-xl border border-[#28415F]">
+                      <p className="text-xs text-slate-400 mb-1">Plan</p>
+                      <p className="text-sm font-bold text-white">{selectedSub.planName}</p>
+                    </div>
+                    <div className="bg-[#17263C] p-4 rounded-xl border border-[#28415F]">
+                      <p className="text-xs text-slate-400 mb-1">Credit Limit</p>
+                      <p className="text-sm font-bold text-emerald-400">PKR {selectedSub.creditLimit.toLocaleString()}</p>
+                    </div>
+                    <div className="bg-[#17263C] p-4 rounded-xl border border-[#28415F]">
+                      <p className="text-xs text-slate-400 mb-1">Utilized</p>
+                      <p className="text-sm font-bold text-amber-400">PKR {selectedSub.utilizedCredit.toLocaleString()}</p>
+                    </div>
+                    <div className="bg-[#17263C] p-4 rounded-xl border border-[#28415F]">
+                      <p className="text-xs text-slate-400 mb-1">Billing Cycle</p>
+                      <p className="text-sm font-bold text-white">{selectedSub.billingCycle}</p>
+                    </div>
+                    <div className="bg-[#17263C] p-4 rounded-xl border border-[#28415F]">
+                      <p className="text-xs text-slate-400 mb-1">Next Billing</p>
+                      <p className="text-sm font-bold text-white">{selectedSub.nextBillingDate}</p>
+                    </div>
+                  </div>
 
-              <div className="bg-[#17263C] p-4 rounded-xl border border-[#28415F]">
-                <p className="text-xs text-slate-400 mb-2">Status</p>
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${
-                  selectedSub.status === 'Active' 
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                    : selectedSub.status === 'Expiring Soon'
-                    ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                    : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                }`}>
-                  <CheckCircle size={12} />
-                  {selectedSub.status}
-                </span>
-              </div>
+                  <div className="bg-[#17263C] p-4 rounded-xl border border-[#28415F]">
+                    <p className="text-xs text-slate-400 mb-2">Status</p>
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${
+                      selectedSub.status === 'Active' 
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                        : selectedSub.status === 'Expiring Soon'
+                        ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                        : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                    }`}>
+                      <CheckCircle size={12} />
+                      {selectedSub.status}
+                    </span>
+                  </div>
 
-              <div className="bg-blue-500/5 border border-blue-500/20 p-4 rounded-xl">
-                <p className="text-xs text-slate-400 mb-2">Quick Actions</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <button className="bg-blue-600/20 hover:bg-blue-600 border border-blue-500/30 text-blue-300 hover:text-white px-3 py-2 rounded-lg text-xs font-bold transition">
-                    <Eye size={12} className="inline mr-1" /> View Details
-                  </button>
-                  <button className="bg-purple-600/20 hover:bg-purple-600 border border-purple-500/30 text-purple-300 hover:text-white px-3 py-2 rounded-lg text-xs font-bold transition">
-                    <Edit2 size={12} className="inline mr-1" /> Edit Plan
-                  </button>
-                </div>
-              </div>
+                  {viewDetails && (
+                    <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700 space-y-2">
+                      <p className="text-xs text-slate-400"><strong>Join Date:</strong> {selectedSub.joinDate}</p>
+                      <p className="text-xs text-slate-400"><strong>Payment Method:</strong> {selectedSub.paymentMethod}</p>
+                      <p className="text-xs text-slate-400"><strong>Subscription ID:</strong> {selectedSub.id}</p>
+                    </div>
+                  )}
+
+                  <div className="bg-blue-500/5 border border-blue-500/20 p-4 rounded-xl">
+                    <p className="text-xs text-slate-400 mb-2">Quick Actions</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button 
+                        onClick={handleViewDetails}
+                        className="bg-blue-600/20 hover:bg-blue-600 border border-blue-500/30 text-blue-300 hover:text-white px-3 py-2 rounded-lg text-xs font-bold transition">
+                        <Eye size={12} className="inline mr-1" /> View Details
+                      </button>
+                      <button 
+                        onClick={handleEditPlan}
+                        className="bg-purple-600/20 hover:bg-purple-600 border border-purple-500/30 text-purple-300 hover:text-white px-3 py-2 rounded-lg text-xs font-bold transition">
+                        <Edit2 size={12} className="inline mr-1" /> Edit Plan
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Modal Footer */}
             <div className="bg-[#17263C] border-t border-[#28415F] px-6 py-4 flex justify-end gap-3">
-              <button
-                onClick={() => setModalOpen(false)}
-                className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-xs font-bold transition"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => {
-                  alert(`✅ Subscription renewed for ${selectedSub.customerName}!`);
-                  setSubscriptions(subscriptions.map(s => s.id === selectedSub.id ? {...s, status: 'Active'} : s));
-                  setModalOpen(false);
-                }}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2"
-              >
-                <CheckCircle size={14} /> Renew Subscription
-              </button>
+              {editMode ? (
+                <>
+                  <button
+                    onClick={handleCancelEdit}
+                    className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2"
+                  >
+                    <X size={14} /> Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveEdit}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2"
+                  >
+                    <Save size={14} /> Save Changes
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setModalOpen(false)}
+                    className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-xs font-bold transition"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={() => {
+                      alert(`✅ Subscription renewed for ${selectedSub.customerName}!`);
+                      setSubscriptions(subscriptions.map(s => s.id === selectedSub.id ? {...s, status: 'Active'} : s));
+                      setModalOpen(false);
+                    }}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2"
+                  >
+                    <CheckCircle size={14} /> Renew Subscription
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

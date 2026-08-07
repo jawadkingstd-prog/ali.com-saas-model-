@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   Wallet, ShieldAlert, PlusCircle, Search, Edit3, UserCheck, TrendingUp, 
   TrendingDown, DollarSign, AlertCircle, Filter, ArrowUpDown, Eye, 
@@ -10,6 +10,8 @@ export default function CustomerWalletsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [sortBy, setSortBy] = useState('name');
+  const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
+  const sortButtonRef = useRef(null);
   
   // Mock Customer Financial Data
   const [customers, setCustomers] = useState([
@@ -92,6 +94,18 @@ export default function CustomerWalletsPage() {
   const [topUpAmount, setTopUpAmount] = useState('');
   const [creditLimitAmount, setCreditLimitAmount] = useState('');
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (sortButtonRef.current && !sortButtonRef.current.contains(event.target)) {
+        setSortDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   // Calculate dynamic status
   const getStatus = (outstanding, limit) => {
     if (outstanding >= limit) return 'Limit Exceeded';
@@ -111,6 +125,16 @@ export default function CustomerWalletsPage() {
   const totalCreditLimit = customers.reduce((acc, c) => acc + c.creditLimit, 0);
   const activeCustomers = customers.filter(c => c.status === 'Active').length;
   const riskCustomers = customers.filter(c => c.status === 'Limit Exceeded').length;
+
+  // Sort options configuration
+  const sortOptions = [
+    { value: 'name', label: 'Name A-Z' },
+    { value: 'balance', label: 'Highest Balance' },
+    { value: 'outstanding', label: 'Highest Outstanding' },
+    { value: 'utilization', label: 'Highest Utilization' }
+  ];
+
+  const currentSortLabel = sortOptions.find(opt => opt.value === sortBy)?.label || 'Sort';
 
   // Filter and Sort
   const filteredCustomers = useMemo(() => {
@@ -275,8 +299,8 @@ export default function CustomerWalletsPage() {
           </div>
         </div>
 
-        {/* Advanced Controls Section */}
-        <div className="bg-gradient-to-br from-[#111C2E] to-[#0f1419] border border-[#28415F] rounded-2xl p-6 backdrop-blur-sm shadow-xl">
+        {/* Advanced Controls Section (Added relative z-30 for proper stacking order over the table) */}
+        <div className="relative z-30 bg-gradient-to-br from-[#111C2E] to-[#0f1419] border border-[#28415F] rounded-2xl p-6 backdrop-blur-sm shadow-xl">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Search */}
             <div className="lg:col-span-2">
@@ -309,35 +333,57 @@ export default function CustomerWalletsPage() {
             </div>
           </div>
 
-          {/* Sort Options */}
-          <div className="mt-4 pt-4 border-t border-[#28415F] flex flex-wrap gap-2">
-            <span className="text-xs text-slate-400 flex items-center gap-2">
-              <ArrowUpDown size={14} /> Sort by:
-            </span>
-            {[
-              { value: 'name', label: 'Name' },
-              { value: 'balance', label: 'Balance' },
-              { value: 'outstanding', label: 'Outstanding' },
-              { value: 'utilization', label: 'Utilization' }
-            ].map(option => (
-              <button
-                key={option.value}
-                onClick={() => setSortBy(option.value)}
-                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  sortBy === option.value
-                    ? 'bg-blue-600/40 text-blue-200 border border-blue-500/50'
-                    : 'bg-[#17263C] text-slate-400 border border-[#28415F] hover:border-[#4EA5FF]/50'
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
+          {/* Sort Dropdown Section */}
+          <div className="mt-4 pt-4 border-t border-[#28415F] flex items-center justify-between">
+            <p className="text-xs text-slate-400">
+              Showing <span className="text-white font-bold">{filteredCustomers.length}</span> of <span className="text-white font-bold">{totalCustomers}</span> customers
+            </p>
 
-          {/* Results Counter */}
-          <p className="text-xs text-slate-400 mt-4">
-            Showing <span className="text-white font-bold">{filteredCustomers.length}</span> of <span className="text-white font-bold">{totalCustomers}</span> customers
-          </p>
+            {/* Sort Button & Absolute Dropdown */}
+            <div ref={sortButtonRef} className="relative">
+              <button
+                onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
+                className="px-4 py-2.5 rounded-xl border-2 border-[#4EA5FF] bg-transparent hover:bg-[#17263C]/50 text-slate-300 hover:text-white text-xs font-bold transition-all flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#4EA5FF]/50"
+              >
+                <ArrowUpDown size={14} />
+                SORT: <span className="text-blue-400 font-bold">{currentSortLabel}</span>
+              </button>
+
+              {/* Dropdown Menu - Fixed with absolute positioning and high z-index */}
+              {sortDropdownOpen && (
+                <div className="absolute right-0 mt-2 z-50 w-72 bg-gradient-to-br from-blue-600/20 to-[#111C2E] border-2 border-[#4EA5FF] rounded-xl shadow-2xl backdrop-blur-md">
+                  {/* Arrow pointer */}
+                  <div className="absolute -top-2 right-6 w-4 h-4 bg-[#111C2E] border-t-2 border-r-2 border-[#4EA5FF] rotate-45"></div>
+                  
+                  <div className="p-3 space-y-2 max-h-96 overflow-y-auto">
+                    {sortOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => {
+                          setSortBy(option.value);
+                          setSortDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-3.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-3 ${
+                          sortBy === option.value
+                            ? 'bg-blue-600/50 text-blue-100 border border-blue-400/60 shadow-lg shadow-blue-600/20'
+                            : 'text-slate-300 hover:bg-blue-600/30 hover:text-white border border-transparent'
+                        }`}
+                      >
+                        {sortBy === option.value ? (
+                          <div className="h-5 w-5 rounded-full bg-blue-400 flex items-center justify-center flex-shrink-0">
+                            <CheckCircle2 size={14} className="text-blue-900" />
+                          </div>
+                        ) : (
+                          <div className="h-5 w-5 rounded-full border-2 border-slate-500 flex-shrink-0"></div>
+                        )}
+                        <span className="text-white font-semibold">{option.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Main Customer Table */}

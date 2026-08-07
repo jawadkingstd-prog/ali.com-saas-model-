@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Truck, Phone, MapPin, CheckCircle2, Clock, Users, DollarSign, Search, ShieldCheck, Navigation, Star, TrendingUp, MessageSquare, Eye, Filter, ArrowUpDown, Award, AlertCircle } from 'lucide-react';
 
 export default function RiderFleetPage() {
@@ -9,11 +9,17 @@ export default function RiderFleetPage() {
   const [selectedRider, setSelectedRider] = useState(null);
   const [selectedTab, setSelectedTab] = useState('overview');
 
-  // Enhanced Rider Fleet Data
+  // Current logged-in user info from localStorage
+  const userRole = localStorage.getItem('userRole') || 'ADMIN';
+  const userEmail = localStorage.getItem('userEmail') || 'delivery1@ledger.com';
+  const userName = localStorage.getItem('userName') || 'Usman Ali';
+
+  // Enhanced Rider Fleet Data with email mapping for delivery role
   const [riders, setRiders] = useState([
     { 
       id: 'RDR-101', 
       name: 'Usman Ali', 
+      email: 'delivery1@ledger.com',
       phone: '+92 300 1234567', 
       zone: 'Gulberg / DHA', 
       activeDeliveries: 3, 
@@ -24,14 +30,19 @@ export default function RiderFleetPage() {
       joinDate: '2023-01-15',
       performance: 98,
       vehicle: 'Bike - White',
-      totalEarnings: 125000
+      totalEarnings: 125000,
+      assignedLocations: [
+        { orderId: 'ORD-501', customer: 'Ali Ahmed', address: 'Gulberg III, Block H, Lahore', status: 'Out for Delivery' },
+        { orderId: 'ORD-505', customer: 'Hamza Shah', address: 'Bahria Town, Safari Villas, Lahore', status: 'Pending' }
+      ]
     },
     { 
       id: 'RDR-102', 
       name: 'Bilal Ahmed', 
+      email: 'delivery2@ledger.com',
       phone: '+92 321 9876543', 
       zone: 'Johar Town', 
-      activeDeliveries: 0, 
+      activeDeliveries: 1, 
       status: 'Available', 
       cashInHand: 0,
       rating: 4.6,
@@ -39,11 +50,15 @@ export default function RiderFleetPage() {
       joinDate: '2023-03-20',
       performance: 96,
       vehicle: 'Car - Silver',
-      totalEarnings: 95000
+      totalEarnings: 95000,
+      assignedLocations: [
+        { orderId: 'ORD-502', customer: 'Fatima Noor', address: 'DHA Phase 5, Sector C, Lahore', status: 'Pending' }
+      ]
     },
     { 
       id: 'RDR-103', 
       name: 'Hamza Sheikh', 
+      email: 'delivery3@ledger.com',
       phone: '+92 333 4567890', 
       zone: 'Model Town', 
       activeDeliveries: 2, 
@@ -54,11 +69,15 @@ export default function RiderFleetPage() {
       joinDate: '2022-11-10',
       performance: 99,
       vehicle: 'Bike - Black',
-      totalEarnings: 156000
+      totalEarnings: 156000,
+      assignedLocations: [
+        { orderId: 'ORD-503', customer: 'Zainab Bibi', address: 'Model Town, Link Road, Lahore', status: 'Delivered' }
+      ]
     },
     { 
       id: 'RDR-104', 
       name: 'Zeeshan Malik', 
+      email: 'delivery4@ledger.com',
       phone: '+92 312 5554433', 
       zone: 'Bahria Town', 
       activeDeliveries: 0, 
@@ -69,18 +88,29 @@ export default function RiderFleetPage() {
       joinDate: '2023-08-05',
       performance: 92,
       vehicle: 'Bike - Red',
-      totalEarnings: 43500
+      totalEarnings: 43500,
+      assignedLocations: [
+        { orderId: 'ORD-504', customer: 'Bilal Khan', address: 'Johar Town, Phase 2, Lahore', status: 'Out for Delivery' }
+      ]
     },
   ]);
 
-  // Calculate Summary Metrics
+  // If user is DELIVERY role, find their specific record
+  const currentRiderData = useMemo(() => {
+    if (userRole === 'DELIVERY') {
+      return riders.find(r => r.email === userEmail) || riders[0];
+    }
+    return null;
+  }, [userRole, userEmail, riders]);
+
+  // Calculate Summary Metrics for Admin
   const totalRiders = riders.length;
   const activeOnDelivery = riders.filter(r => r.status === 'On Delivery').length;
   const availableRiders = riders.filter(r => r.status === 'Available').length;
   const totalCashCollection = riders.reduce((acc, r) => acc + r.cashInHand, 0);
   const avgRating = (riders.reduce((acc, r) => acc + r.rating, 0) / riders.length).toFixed(1);
 
-  // Filter and Sort riders
+  // Filter and Sort riders (for Admin view)
   const filteredRiders = useMemo(() => {
     let filtered = riders.filter(r => {
       const matchesSearch = 
@@ -93,7 +123,6 @@ export default function RiderFleetPage() {
       return matchesSearch && matchesStatus;
     });
 
-    // Sorting logic
     if (sortBy === 'name') {
       filtered.sort((a, b) => a.name.localeCompare(b.name));
     } else if (sortBy === 'rating') {
@@ -107,6 +136,111 @@ export default function RiderFleetPage() {
     return filtered;
   }, [searchQuery, riders, statusFilter, sortBy]);
 
+  // ==========================================
+  // RIDER PORTAL VIEW (When logged in as Delivery)
+  // ==========================================
+  if (userRole === 'DELIVERY') {
+    const assignedOrders = currentRiderData?.assignedLocations || [];
+    
+    return (
+      <div className="space-y-6 text-white max-w-7xl mx-auto px-4 py-6 bg-gradient-to-br from-slate-950 via-[#0f1419] to-slate-950 min-h-screen rounded-3xl">
+        {/* Rider Header */}
+        <div className="bg-[#111C2E] border border-[#28415F] rounded-2xl p-6 shadow-xl">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="h-10 w-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center">
+                  <Truck size={20} className="text-[#4EA5FF]" />
+                </div>
+                <h1 className="text-2xl font-black tracking-tight text-white">Welcome, {currentRiderData.name}</h1>
+                <span className="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-blue-500/15 text-blue-400 border border-blue-500/30">RIDER PORTAL</span>
+              </div>
+              <p className="text-sm text-slate-400">Zone: <span className="text-white font-bold">{currentRiderData.zone}</span> • Vehicle: <span className="text-white font-bold">{currentRiderData.vehicle}</span></p>
+            </div>
+            <div className="bg-[#17263C] px-4 py-3 rounded-xl border border-[#28415F] flex items-center gap-4">
+              <div>
+                <p className="text-xs text-slate-400">Cash In Hand</p>
+                <p className="text-lg font-black text-amber-400 font-mono">PKR {currentRiderData.cashInHand.toLocaleString()}</p>
+              </div>
+              <div className="h-8 w-px bg-[#28415F]"></div>
+              <div>
+                <p className="text-xs text-slate-400">Rating</p>
+                <p className="text-lg font-black text-yellow-400 flex items-center gap-1">
+                  {currentRiderData.rating} <Star size={14} className="fill-yellow-400" />
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Assigned Delivery Locations Header */}
+        <div className="bg-[#111C2E] border border-[#28415F] rounded-2xl p-6 shadow-xl">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <Navigation size={18} className="text-[#4EA5FF]" /> Your Assigned Delivery Locations & Routes
+            </h2>
+            <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+              {assignedOrders.length} Active Stops
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {assignedOrders.length === 0 ? (
+              <div className="col-span-2 text-center py-12 text-slate-400 bg-[#17263C]/50 rounded-xl border border-[#28415F]">
+                <AlertCircle className="mx-auto mb-2 text-slate-500" size={24} />
+                No delivery locations assigned at the moment. Check back soon!
+              </div>
+            ) : (
+              assignedOrders.map((order, idx) => (
+                <div key={idx} className="bg-[#17263C] border border-[#28415F] rounded-xl p-5 space-y-4 hover:border-[#4EA5FF]/50 transition duration-200">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-mono font-bold text-[#4EA5FF] px-2.5 py-1 rounded-md bg-blue-500/10 border border-blue-500/20">
+                      {order.orderId}
+                    </span>
+                    <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${
+                      order.status === 'Delivered' 
+                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' 
+                        : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                    }`}>
+                      {order.status}
+                    </span>
+                  </div>
+
+                  <div>
+                    <p className="font-bold text-white text-base">{order.customer}</p>
+                    <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-1">
+                      <MapPin size={14} className="text-red-400 shrink-0" /> {order.address}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 flex gap-2">
+                    <button 
+                      onClick={() => alert(`Opening navigation for ${order.address}`)}
+                      className="flex-1 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/40 text-blue-300 font-bold text-xs py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Navigation size={14} /> Navigate Route
+                    </button>
+                    <button 
+                      onClick={() => {
+                        alert(`Status updated for ${order.orderId}!`);
+                      }}
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <CheckCircle2 size={14} /> Mark Delivered
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // ADMIN PORTAL VIEW (Default Full Fleet View)
+  // ==========================================
   return (
     <div className="space-y-6 text-white max-w-7xl mx-auto px-4 py-6 bg-gradient-to-br from-slate-950 via-[#0f1419] to-slate-950 min-h-screen rounded-3xl">
       
@@ -307,7 +441,7 @@ export default function RiderFleetPage() {
                           setSelectedTab('overview');
                           setModalOpen(true);
                         }}
-                        className="bg-gradient-to-r from-blue-600/30 to-cyan-600/30 border border-blue-500/40 hover:from-blue-600/60 hover:to-cyan-600/60 text-blue-300 hover:text-white px-4 py-2 rounded-lg font-bold transition duration-200 text-xs"
+                        className="bg-gradient-to-r from-blue-600/30 to-cyan-600/30 border border-blue-500/40 hover:from-blue-600/60 hover:to-cyan-600/60 text-blue-300 hover:text-white px-4 py-2 rounded-lg font-bold transition duration-200 text-xs cursor-pointer"
                       >
                         Manage
                       </button>
@@ -339,7 +473,7 @@ export default function RiderFleetPage() {
                 </div>
                 <button
                   onClick={() => setModalOpen(false)}
-                  className="text-slate-400 hover:text-white transition"
+                  className="text-slate-400 hover:text-white transition cursor-pointer"
                 >
                   ✕
                 </button>
@@ -351,7 +485,7 @@ export default function RiderFleetPage() {
                   <button
                     key={tab}
                     onClick={() => setSelectedTab(tab)}
-                    className={`px-4 py-2 rounded-lg text-sm font-bold transition ${
+                    className={`px-4 py-2 rounded-lg text-sm font-bold transition cursor-pointer ${
                       selectedTab === tab
                         ? 'bg-blue-600/50 text-white border border-blue-500/50'
                         : 'text-slate-400 hover:text-white'
@@ -454,15 +588,6 @@ export default function RiderFleetPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="bg-[#17263C] p-3 rounded-lg border border-[#28415F] flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 size={16} className="text-emerald-400" />
-                      <div>
-                        <p className="text-sm font-bold text-white">Recent Settlement</p>
-                        <p className="text-xs text-slate-400">3 days ago - PKR 12,000</p>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               )}
             </div>
@@ -472,14 +597,14 @@ export default function RiderFleetPage() {
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}
-                className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-2.5 rounded-lg font-bold transition duration-200"
+                className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-2.5 rounded-lg font-bold transition duration-200 cursor-pointer"
               >
                 Close
               </button>
               <button
                 type="button"
                 onClick={() => alert(`Message sent to ${selectedRider.name}!`)}
-                className="bg-blue-600/40 hover:bg-blue-600 border border-blue-500/50 text-blue-300 hover:text-white px-6 py-2.5 rounded-lg font-bold transition duration-200 flex items-center gap-2"
+                className="bg-blue-600/40 hover:bg-blue-600 border border-blue-500/50 text-blue-300 hover:text-white px-6 py-2.5 rounded-lg font-bold transition duration-200 flex items-center gap-2 cursor-pointer"
               >
                 <MessageSquare size={16} /> Message
               </button>
@@ -490,7 +615,7 @@ export default function RiderFleetPage() {
                   setRiders(riders.map(r => r.id === selectedRider.id ? {...r, cashInHand: 0, status: 'Available'} : r));
                   setModalOpen(false);
                 }}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg font-bold transition duration-200 flex items-center gap-2"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg font-bold transition duration-200 flex items-center gap-2 cursor-pointer"
               >
                 <CheckCircle2 size={16} /> Settle & Clear
               </button>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Users, Truck, Plus, Search, MapPin, Phone, Shield, 
   ChevronDown, ArrowUpDown, Filter, ChevronLeft, ChevronRight, 
@@ -19,28 +19,49 @@ export default function CustomersPage() {
 
   // Modals States
   const [showAddModal, setShowAddModal] = useState(false);
-  const [viewUserModal, setViewUserModal] = useState(null); // Added View Details Modal state
+  const [viewUserModal, setViewUserModal] = useState(null);
 
   const [newCustomer, setNewCustomer] = useState({ firstName: '', lastName: '', phone: '', location: '', address: '', balance: '', orders: '' });
   const [newRider, setNewRider] = useState({ firstName: '', lastName: '', phone: '', vehicle: '', status: 'Idle', completed: '' });
 
-  // --- LIVE DATABASES ---
-  const [customers, setCustomers] = useState([
-    { id: 1, name: 'Faiza Malik', phone: '+92 300 1234567', location: 'Lahore, PK', address: 'House 45, Street 2, Gulberg', balance: 12500, orders: 45 },
-    { id: 2, name: 'Zainab Ahmed', phone: '+92 321 7654321', location: 'Karachi, PK', address: 'Apartment 12B, Clifton', balance: -3200, orders: 12 },
-    { id: 3, name: 'Asad Ali', phone: '+92 333 9876543', location: 'Islamabad, PK', address: 'Sector F-7/2, Street 10', balance: 0, orders: 28 },
-    { id: 4, name: 'Hamza Lodhi', phone: '+92 301 4567890', location: 'Rawalpindi, PK', address: 'Main Peshawar Road, Block C', balance: 8400, orders: 19 },
-    { id: 5, name: 'Sana Qureshi', phone: '+92 315 1122334', location: 'Multan, PK', address: 'Abdali Road, Near Chowk', balance: -1500, orders: 7 },
-    { id: 6, name: 'Bilal Farooq', phone: '+92 322 9988776', location: 'Peshawar, PK', address: 'University Town, Street 5', balance: 0, orders: 32 },
-  ]);
+  // --- LIVE DATABASES WITH LOCALSTORAGE PERSISTENCE ---
+  const [customers, setCustomers] = useState(() => {
+    const saved = localStorage.getItem('aliLedger_customers');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { console.error(e); }
+    }
+    return [
+      { id: 1, name: 'Faiza Malik', phone: '+92 300 1234567', location: 'Lahore, PK', address: 'House 45, Street 2, Gulberg', balance: 12500, orders: 45 },
+      { id: 2, name: 'Zainab Ahmed', phone: '+92 321 7654321', location: 'Karachi, PK', address: 'Apartment 12B, Clifton', balance: -3200, orders: 12 },
+      { id: 3, name: 'Asad Ali', phone: '+92 333 9876543', location: 'Islamabad, PK', address: 'Sector F-7/2, Street 10', balance: 0, orders: 28 },
+      { id: 4, name: 'Hamza Lodhi', phone: '+92 301 4567890', location: 'Rawalpindi, PK', address: 'Main Peshawar Road, Block C', balance: 8400, orders: 19 },
+      { id: 5, name: 'Sana Qureshi', phone: '+92 315 1122334', location: 'Multan, PK', address: 'Abdali Road, Near Chowk', balance: -1500, orders: 7 },
+      { id: 6, name: 'Bilal Farooq', phone: '+92 322 9988776', location: 'Peshawar, PK', address: 'University Town, Street 5', balance: 0, orders: 32 },
+    ];
+  });
 
-  const [deliveryPersons, setDeliveryPersons] = useState([
-    { id: 1, name: 'Sajid Khan', phone: '+92 300 9998887', vehicle: 'Motorcycle (HON-123)', status: 'On Delivery', completed: 142 },
-    { id: 2, name: 'Bilal Butt', phone: '+92 312 4445556', vehicle: 'Carry Dabba (LE-9988)', status: 'Idle', completed: 320 },
-    { id: 3, name: 'Kamran Shah', phone: '+92 345 2221110', vehicle: 'Suzuki Pickup (RI-4433)', status: 'On Delivery', completed: 89 },
-    { id: 4, name: 'Usman Ghani', phone: '+92 320 5556667', vehicle: 'Motorcycle (KY-402)', status: 'Idle', completed: 215 },
-    { id: 5, name: 'Waseem Akram', phone: '+92 331 8881112', vehicle: 'Cargo Van (MN-786)', status: 'On Delivery', completed: 310 },
-  ]);
+  const [deliveryPersons, setDeliveryPersons] = useState(() => {
+    const saved = localStorage.getItem('aliLedger_deliveryPersons');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { console.error(e); }
+    }
+    return [
+      { id: 1, name: 'Sajid Khan', phone: '+92 300 9998887', vehicle: 'Motorcycle (HON-123)', status: 'On Delivery', completed: 142 },
+      { id: 2, name: 'Bilal Butt', phone: '+92 312 4445556', vehicle: 'Carry Dabba (LE-9988)', status: 'Idle', completed: 320 },
+      { id: 3, name: 'Kamran Shah', phone: '+92 345 2221110', vehicle: 'Suzuki Pickup (RI-4433)', status: 'On Delivery', completed: 89 },
+      { id: 4, name: 'Usman Ghani', phone: '+92 320 5556667', vehicle: 'Motorcycle (KY-402)', status: 'Idle', completed: 215 },
+      { id: 5, name: 'Waseem Akram', phone: '+92 331 8881112', vehicle: 'Cargo Van (MN-786)', status: 'On Delivery', completed: 310 },
+    ];
+  });
+
+  // Save changes to localStorage automatically
+  useEffect(() => {
+    localStorage.setItem('aliLedger_customers', JSON.stringify(customers));
+  }, [customers]);
+
+  useEffect(() => {
+    localStorage.setItem('aliLedger_deliveryPersons', JSON.stringify(deliveryPersons));
+  }, [deliveryPersons]);
 
   // --- STATS CALCULATIONS ---
   const totalCustomers = customers.length;
@@ -86,7 +107,7 @@ export default function CustomersPage() {
         name: fullName,
         phone: newCustomer.phone,
         location: newCustomer.location || 'Lahore, PK',
-        address: newCustomer.address || 'N/A', // Captured Address Field
+        address: newCustomer.address || 'N/A',
         balance: Number(newCustomer.balance) || 0,
         orders: Number(newCustomer.orders) || 0
       };
@@ -605,7 +626,6 @@ export default function CustomersPage() {
                       className="w-full bg-[#090E17] border border-[#28415F] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#4EA5FF]"
                     />
                   </div>
-                  {/* Street Address Field Included */}
                   <div>
                     <label className="block text-[10px] font-bold uppercase tracking-wider text-[#9FB6D4] mb-1.5">Street Address</label>
                     <input

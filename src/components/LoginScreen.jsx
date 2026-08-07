@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import { Lock, Mail, ArrowRight, Loader2, KeyRound, Eye, EyeOff, User, ShieldCheck } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Loader2, Eye, EyeOff, User, Globe } from 'lucide-react';
 import logoCyan from '../assets/Logo_Cyan1.png';
 
 export default function LoginScreen({ onLoginSuccess }) {
@@ -11,13 +11,37 @@ export default function LoginScreen({ onLoginSuccess }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Helper to determine role based on email domain or mock credentials
-  const determineRole = (emailInput) => {
-    const lower = emailInput.toLowerCase();
-    if (lower.includes('admin')) return 'ADMIN';
-    if (lower.includes('delivery') || lower.includes('rider')) return 'DELIVERY';
-    if (lower.includes('customer')) return 'CUSTOMER';
-    return 'VIEWER';
+  // Delivery persons database (4 Riders)
+  const deliveryTeamDatabase = [
+    { email: 'delivery1@ledger.com', password: 'rider111', name: 'Ali (Rider 1)' },
+    { email: 'delivery2@ledger.com', password: 'rider222', name: 'Usman (Rider 2)' },
+    { email: 'delivery3@ledger.com', password: 'rider333', name: 'Bilal (Rider 3)' },
+    { email: 'delivery4@ledger.com', password: 'rider444', name: 'Hamza (Rider 4)' },
+  ];
+
+  // Employee team database (4 Employees)
+  const employeeTeamDatabase = [
+    { email: 'employee1@ledger.com', password: 'emp111', name: 'Ahmed (Staff 1)' },
+    { email: 'employee2@ledger.com', password: 'emp222', name: 'Bilal (Staff 2)' },
+    { email: 'employee3@ledger.com', password: 'emp333', name: 'Zain (Staff 3)' },
+    { email: 'employee4@ledger.com', password: 'emp444', name: 'Fahad (Staff 4)' },
+  ];
+
+  // Customer team database (4 Customers)
+  const customerTeamDatabase = [
+    { email: 'customer1@ledger.com', password: 'cust111', name: 'Ali Traders (Customer 1)' },
+    { email: 'customer2@ledger.com', password: 'cust222', name: 'Zain Enterprises (Customer 2)' },
+    { email: 'customer3@ledger.com', password: 'cust333', name: 'Hassan Stores (Customer 3)' },
+    { email: 'customer4@ledger.com', password: 'cust444', name: 'Usman Mart (Customer 4)' },
+  ];
+
+  const handleGuestLogin = () => {
+    localStorage.setItem('isAuthenticated', 'true');
+    localStorage.setItem('userRole', 'VIEWER');
+    localStorage.setItem('userName', 'Guest Visitor');
+    toast.success('Switched to Live Platform Preview Mode!');
+    if (onLoginSuccess) onLoginSuccess();
+    window.location.reload();
   };
 
   const handleSubmit = (e) => {
@@ -30,12 +54,15 @@ export default function LoginScreen({ onLoginSuccess }) {
       return;
     }
 
+    if (authMode !== 'forgot' && !cleanPassword) {
+      toast.error('Please enter your password.');
+      return;
+    }
+
     setLoading(true);
     setTimeout(() => {
       if (authMode === 'forgot') {
-        toast.success('Password reset link sent to your email!', {
-          style: { background: '#111C2E', color: '#FFFFFF', borderLeft: '4px solid #36D399' }
-        });
+        toast.success('Password reset link sent to your email!');
         setAuthMode('login');
         setLoading(false);
         return;
@@ -47,40 +74,110 @@ export default function LoginScreen({ onLoginSuccess }) {
           setLoading(false);
           return;
         }
-        const assignedRole = determineRole(cleanEmail);
+
+        let assignedRole = 'CUSTOMER';
+        if (cleanEmail.includes('admin')) assignedRole = 'ADMIN';
+        else if (cleanEmail.includes('employee')) assignedRole = 'EMPLOYEE';
+        else if (cleanEmail.includes('delivery') || cleanEmail.includes('rider')) assignedRole = 'DELIVERY';
+
         localStorage.setItem('isAuthenticated', 'true');
         localStorage.setItem('userEmail', cleanEmail);
         localStorage.setItem('userName', name);
         localStorage.setItem('userRole', assignedRole);
 
-        toast.success(`Account created! Welcome, ${assignedRole}`, {
-          style: { background: '#111C2E', color: '#FFFFFF', borderLeft: '4px solid #36D399' }
-        });
+        toast.success(`Account created! Welcome, ${assignedRole}`);
         onLoginSuccess();
         setLoading(false);
         return;
       }
 
-      // Login Flow
-      if (!cleanPassword) {
-        toast.error('Please enter your password.');
+      // 1. Check Delivery Team Login
+      const foundRider = deliveryTeamDatabase.find(
+        (r) => r.email === cleanEmail && r.password.toLowerCase() === cleanPassword.toLowerCase()
+      );
+
+      if (foundRider) {
+        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('userEmail', foundRider.email);
+        localStorage.setItem('userName', foundRider.name);
+        localStorage.setItem('userRole', 'DELIVERY');
+        
+        toast.success(`Welcome back, ${foundRider.name}!`);
+        onLoginSuccess();
         setLoading(false);
         return;
       }
 
-      // Default Demo Credentials check or flexible mock login
-      const assignedRole = determineRole(cleanEmail);
+      // 2. Check Employee Team Login
+      const foundEmployee = employeeTeamDatabase.find(
+        (emp) => emp.email === cleanEmail && emp.password.toLowerCase() === cleanPassword.toLowerCase()
+      );
+
+      if (foundEmployee) {
+        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('userEmail', foundEmployee.email);
+        localStorage.setItem('userName', foundEmployee.name);
+        localStorage.setItem('userRole', 'EMPLOYEE');
+        
+        toast.success(`Welcome back, ${foundEmployee.name}!`);
+        onLoginSuccess();
+        setLoading(false);
+        return;
+      }
+
+      // 3. Check Customer Team Login
+      const foundCustomer = customerTeamDatabase.find(
+        (cust) => cust.email === cleanEmail && cust.password.toLowerCase() === cleanPassword.toLowerCase()
+      );
+
+      if (foundCustomer) {
+        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('userEmail', foundCustomer.email);
+        localStorage.setItem('userName', foundCustomer.name);
+        localStorage.setItem('userRole', 'CUSTOMER');
+        
+        toast.success(`Welcome back, ${foundCustomer.name}!`);
+        onLoginSuccess();
+        setLoading(false);
+        return;
+      }
+
+      if (cleanEmail.startsWith('delivery')) {
+        toast.error('Invalid password for this delivery rider.');
+        setLoading(false);
+        return;
+      }
+
+      if (cleanEmail.startsWith('employee')) {
+        toast.error('Invalid password for this employee account.');
+        setLoading(false);
+        return;
+      }
+
+      if (cleanEmail.startsWith('customer')) {
+        toast.error('Invalid password for this customer account.');
+        setLoading(false);
+        return;
+      }
+
+      // 4. Admin Fallback & Generic Customer Logic
+      let assignedRole = 'CUSTOMER';
+      let displayName = cleanEmail.split('@')[0].toUpperCase();
+
+      if (cleanEmail.includes('admin')) {
+        assignedRole = 'ADMIN';
+        displayName = 'Admin User';
+      }
+
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('userEmail', cleanEmail);
-      localStorage.setItem('userName', cleanEmail.split('@')[0].toUpperCase());
+      localStorage.setItem('userName', displayName);
       localStorage.setItem('userRole', assignedRole);
 
-      toast.success(`Logged in successfully as ${assignedRole}!`, {
-        style: { background: '#111C2E', color: '#FFFFFF', borderLeft: '4px solid #36D399' }
-      });
+      toast.success(`Logged in successfully as ${assignedRole}!`);
       onLoginSuccess();
       setLoading(false);
-    }, 800);
+    }, 500);
   };
 
   return (
@@ -99,7 +196,7 @@ export default function LoginScreen({ onLoginSuccess }) {
           </h2>
           <p className="text-xs text-[#9FB6D4]">
             {authMode === 'login' && 'Sign in to access your logistical console'}
-            {authMode === 'signup' && 'Create a new account (Admin, Delivery, Customer, Viewer)'}
+            {authMode === 'signup' && 'Create a new account'}
             {authMode === 'forgot' && 'Recover your console account password'}
           </p>
         </div>
@@ -131,7 +228,7 @@ export default function LoginScreen({ onLoginSuccess }) {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@ledger.com / delivery@ledger.com"
+              placeholder="admin@ledger.com / customer1@ledger.com"
               className="w-full bg-[#090E17] border border-[#28415F] rounded-xl px-4 py-3 text-sm text-white placeholder-[#9FB6D4]/30 focus:outline-none focus:border-[#4EA5FF] transition-all"
               required
             />
@@ -188,6 +285,18 @@ export default function LoginScreen({ onLoginSuccess }) {
           </button>
         </form>
 
+        {/* Explore Platform as Guest Button */}
+        {authMode === 'login' && (
+          <button
+            type="button"
+            onClick={handleGuestLogin}
+            className="w-full bg-[#17263C] hover:bg-[#1e324f] border border-[#4EA5FF]/30 text-[#4EA5FF] font-bold text-xs uppercase tracking-widest py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
+          >
+            <Globe size={15} />
+            <span>Explore Live Platform (Viewer Mode)</span>
+          </button>
+        )}
+
         {/* Switcher Links */}
         <div className="text-center pt-2 border-t border-[#28415F]/50">
           {authMode === 'login' ? (
@@ -207,11 +316,16 @@ export default function LoginScreen({ onLoginSuccess }) {
           )}
         </div>
 
-        {/* Demo hints */}
+        {/* Demo hints including all 4 Customers, Employees, and Riders */}
         {authMode === 'login' && (
-          <div className="bg-[#090E17]/60 border border-[#28415F] rounded-xl p-3 space-y-1 text-center">
-            <p className="text-[10px] text-[#9FB6D4] font-semibold">💡 Quick Role Test Logins:</p>
-            <p className="text-[9px] text-[#4EA5FF] font-mono">admin@ledger.com | delivery@ledger.com | customer@ledger.com | viewer@ledger.com</p>
+          <div className="bg-[#090E17]/60 border border-[#28415F] rounded-xl p-3 space-y-1.5 text-center">
+            <p className="text-[10px] text-[#9FB6D4] font-semibold">💡 Quick Logins:</p>
+            <p className="text-[9px] text-[#4EA5FF] font-mono leading-relaxed">
+              Admin: admin@ledger.com<br/>
+              Customers: customer1@ledger.com (cust111) to customer4@ledger.com (cust444)<br/>
+              Employees: employee1@ledger.com (emp111) to employee4@ledger.com (emp444)<br/>
+              Riders: delivery1@ledger.com (rider111) to delivery4@ledger.com (rider444)
+            </p>
           </div>
         )}
 

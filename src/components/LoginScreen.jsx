@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { Lock, Mail, ArrowRight, Loader2, Eye, EyeOff, User, Globe } from 'lucide-react';
-import logoCyan from '../assets/Logo_Cyan1.png';
+import { auth } from '../firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 
 export default function LoginScreen({ onLoginSuccess }) {
   const [authMode, setAuthMode] = useState('login'); // 'login', 'signup', 'forgot'
@@ -10,30 +11,6 @@ export default function LoginScreen({ onLoginSuccess }) {
   const [name, setName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  // Delivery persons database (4 Riders)
-  const deliveryTeamDatabase = [
-    { email: 'delivery1@ledger.com', password: 'rider111', name: 'Ali (Rider 1)' },
-    { email: 'delivery2@ledger.com', password: 'rider222', name: 'Usman (Rider 2)' },
-    { email: 'delivery3@ledger.com', password: 'rider333', name: 'Bilal (Rider 3)' },
-    { email: 'delivery4@ledger.com', password: 'rider444', name: 'Hamza (Rider 4)' },
-  ];
-
-  // Employee team database (4 Employees)
-  const employeeTeamDatabase = [
-    { email: 'employee1@ledger.com', password: 'emp111', name: 'Ahmed (Staff 1)' },
-    { email: 'employee2@ledger.com', password: 'emp222', name: 'Bilal (Staff 2)' },
-    { email: 'employee3@ledger.com', password: 'emp333', name: 'Zain (Staff 3)' },
-    { email: 'employee4@ledger.com', password: 'emp444', name: 'Fahad (Staff 4)' },
-  ];
-
-  // Customer team database (4 Customers)
-  const customerTeamDatabase = [
-    { email: 'customer1@ledger.com', password: 'cust111', name: 'Ali Traders (Customer 1)' },
-    { email: 'customer2@ledger.com', password: 'cust222', name: 'Zain Enterprises (Customer 2)' },
-    { email: 'customer3@ledger.com', password: 'cust333', name: 'Hassan Stores (Customer 3)' },
-    { email: 'customer4@ledger.com', password: 'cust444', name: 'Usman Mart (Customer 4)' },
-  ];
 
   const handleGuestLogin = () => {
     localStorage.setItem('isAuthenticated', 'true');
@@ -44,7 +21,7 @@ export default function LoginScreen({ onLoginSuccess }) {
     window.location.reload();
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const cleanEmail = email.trim().toLowerCase();
     const cleanPassword = password.trim();
@@ -60,8 +37,10 @@ export default function LoginScreen({ onLoginSuccess }) {
     }
 
     setLoading(true);
-    setTimeout(() => {
+
+    try {
       if (authMode === 'forgot') {
+        await sendPasswordResetEmail(auth, cleanEmail);
         toast.success('Password reset link sent to your email!');
         setAuthMode('login');
         setLoading(false);
@@ -75,6 +54,9 @@ export default function LoginScreen({ onLoginSuccess }) {
           return;
         }
 
+        // Firebase Sign Up
+        await createUserWithEmailAndPassword(auth, cleanEmail, cleanPassword);
+
         let assignedRole = 'CUSTOMER';
         if (cleanEmail.includes('admin')) assignedRole = 'ADMIN';
         else if (cleanEmail.includes('employee')) assignedRole = 'EMPLOYEE';
@@ -86,98 +68,42 @@ export default function LoginScreen({ onLoginSuccess }) {
         localStorage.setItem('userRole', assignedRole);
 
         toast.success(`Account created! Welcome, ${assignedRole}`);
-        onLoginSuccess();
+        if (onLoginSuccess) onLoginSuccess();
         setLoading(false);
         return;
       }
 
-      // 1. Check Delivery Team Login
-      const foundRider = deliveryTeamDatabase.find(
-        (r) => r.email === cleanEmail && r.password.toLowerCase() === cleanPassword.toLowerCase()
-      );
+      // Firebase Sign In
+      const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, cleanPassword);
+      const user = userCredential.user;
 
-      if (foundRider) {
-        localStorage.setItem('isAuthenticated', 'true');
-        localStorage.setItem('userEmail', foundRider.email);
-        localStorage.setItem('userName', foundRider.name);
-        localStorage.setItem('userRole', 'DELIVERY');
-        
-        toast.success(`Welcome back, ${foundRider.name}!`);
-        onLoginSuccess();
-        setLoading(false);
-        return;
-      }
-
-      // 2. Check Employee Team Login
-      const foundEmployee = employeeTeamDatabase.find(
-        (emp) => emp.email === cleanEmail && emp.password.toLowerCase() === cleanPassword.toLowerCase()
-      );
-
-      if (foundEmployee) {
-        localStorage.setItem('isAuthenticated', 'true');
-        localStorage.setItem('userEmail', foundEmployee.email);
-        localStorage.setItem('userName', foundEmployee.name);
-        localStorage.setItem('userRole', 'EMPLOYEE');
-        
-        toast.success(`Welcome back, ${foundEmployee.name}!`);
-        onLoginSuccess();
-        setLoading(false);
-        return;
-      }
-
-      // 3. Check Customer Team Login
-      const foundCustomer = customerTeamDatabase.find(
-        (cust) => cust.email === cleanEmail && cust.password.toLowerCase() === cleanPassword.toLowerCase()
-      );
-
-      if (foundCustomer) {
-        localStorage.setItem('isAuthenticated', 'true');
-        localStorage.setItem('userEmail', foundCustomer.email);
-        localStorage.setItem('userName', foundCustomer.name);
-        localStorage.setItem('userRole', 'CUSTOMER');
-        
-        toast.success(`Welcome back, ${foundCustomer.name}!`);
-        onLoginSuccess();
-        setLoading(false);
-        return;
-      }
-
-      if (cleanEmail.startsWith('delivery')) {
-        toast.error('Invalid password for this delivery rider.');
-        setLoading(false);
-        return;
-      }
-
-      if (cleanEmail.startsWith('employee')) {
-        toast.error('Invalid password for this employee account.');
-        setLoading(false);
-        return;
-      }
-
-      if (cleanEmail.startsWith('customer')) {
-        toast.error('Invalid password for this customer account.');
-        setLoading(false);
-        return;
-      }
-
-      // 4. Admin Fallback & Generic Customer Logic
       let assignedRole = 'CUSTOMER';
-      let displayName = cleanEmail.split('@')[0].toUpperCase();
+      let displayName = user.email.split('@')[0].toUpperCase();
 
       if (cleanEmail.includes('admin')) {
         assignedRole = 'ADMIN';
         displayName = 'Admin User';
+      } else if (cleanEmail.includes('employee')) {
+        assignedRole = 'EMPLOYEE';
+        displayName = 'Staff Member';
+      } else if (cleanEmail.includes('delivery') || cleanEmail.includes('rider')) {
+        assignedRole = 'DELIVERY';
+        displayName = 'Delivery Rider';
       }
 
       localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('userEmail', cleanEmail);
+      localStorage.setItem('userEmail', user.email);
       localStorage.setItem('userName', displayName);
       localStorage.setItem('userRole', assignedRole);
 
       toast.success(`Logged in successfully as ${assignedRole}!`);
-      onLoginSuccess();
+      if (onLoginSuccess) onLoginSuccess();
       setLoading(false);
-    }, 500);
+
+    } catch (err) {
+      toast.error(err.message.replace('Firebase: ', ''));
+      setLoading(false);
+    }
   };
 
   return (
@@ -188,8 +114,8 @@ export default function LoginScreen({ onLoginSuccess }) {
 
         {/* Brand Header */}
         <div className="text-center space-y-3">
-          <div className="bg-[#111C2E] border border-[#28415F] rounded-2xl p-2.5 shadow-xl inline-flex items-center justify-center mb-1">
-            <img src={logoCyan} alt="AliLedger Logo" className="h-10 w-10 object-contain" />
+          <div className="w-14 h-14 mx-auto bg-[#111C2E] border border-[#28415F] rounded-2xl shadow-xl overflow-hidden flex items-center justify-center mb-1">
+            <img src="/Logo_Blue.png" alt="AliLedger Logo" className="h-full w-full object-cover" />
           </div>
           <h2 className="text-2xl font-black tracking-wider text-white uppercase">
             Ali<span className="text-[#4EA5FF]">Ledger</span>
@@ -228,7 +154,7 @@ export default function LoginScreen({ onLoginSuccess }) {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@ledger.com / customer1@ledger.com"
+              placeholder="syedjawadahmedj@gmail.com"
               className="w-full bg-[#090E17] border border-[#28415F] rounded-xl px-4 py-3 text-sm text-white placeholder-[#9FB6D4]/30 focus:outline-none focus:border-[#4EA5FF] transition-all"
               required
             />
@@ -316,15 +242,12 @@ export default function LoginScreen({ onLoginSuccess }) {
           )}
         </div>
 
-        {/* Demo hints including all 4 Customers, Employees, and Riders */}
+        {/* Demo hints */}
         {authMode === 'login' && (
           <div className="bg-[#090E17]/60 border border-[#28415F] rounded-xl p-3 space-y-1.5 text-center">
-            <p className="text-[10px] text-[#9FB6D4] font-semibold">💡 Quick Logins:</p>
+            <p className="text-[10px] text-[#9FB6D4] font-semibold">💡 Firebase Auth Note:</p>
             <p className="text-[9px] text-[#4EA5FF] font-mono leading-relaxed">
-              Admin: admin@ledger.com<br/>
-              Customers: customer1@ledger.com (cust111) to customer4@ledger.com (cust444)<br/>
-              Employees: employee1@ledger.com (emp111) to employee4@ledger.com (emp444)<br/>
-              Riders: delivery1@ledger.com (rider111) to delivery4@ledger.com (rider444)
+              Use the admin account created in Firebase Console (`syedjawadahmedj@gmail.com`) to sign in successfully.
             </p>
           </div>
         )}

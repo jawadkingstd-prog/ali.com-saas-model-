@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Zap, Package, Truck, Wallet, ShieldCheck, ArrowRight, CheckCircle2, Globe, LogIn, MapPin, TrendingUp, Activity, Clock, BarChart3, Eye } from 'lucide-react';
-import logoCyan from '../assets/Logo_Cyan1.png';
 
 export default function PublicWebsiteView({ onLogout }) {
   const [visitorCount, setVisitorCount] = useState(15420);
@@ -65,8 +64,9 @@ export default function PublicWebsiteView({ onLogout }) {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           
           <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-br from-[#1a2847] to-[#0d1425] border border-[#00D4FF]/30 rounded-2xl p-2.5 shadow-lg inline-flex items-center justify-center hover:border-[#00D4FF]/60 transition">
-              <img src={logoCyan} alt="Logo" className="h-7 w-7 object-contain" />
+            {/* LOGO CONTAINER FIX */}
+            <div className="w-10 h-10 bg-[#0d1425] border border-[#00D4FF]/30 rounded-2xl shadow-lg overflow-hidden flex items-center justify-center hover:border-[#00D4FF]/60 transition">
+              <img src="/Logo_Blue.png" alt="Logo" className="h-full w-full object-cover" />
             </div>
             <div>
               <span className="font-black text-xl bg-gradient-to-r from-[#00D4FF] to-cyan-300 bg-clip-text text-transparent">Ali.com Pro</span>
@@ -99,7 +99,7 @@ export default function PublicWebsiteView({ onLogout }) {
       {/* Main Content */}
       <main className="relative z-10 flex-1">
 
-        {/* Hero Section - Redesigned */}
+        {/* Hero Section */}
         <section className="max-w-7xl mx-auto px-6 py-20 lg:py-32 text-center space-y-10">
           <div className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-[#00D4FF]/10 border border-[#00D4FF]/40 text-[#00D4FF] text-xs font-bold shadow-lg hover:bg-[#00D4FF]/20 transition cursor-default">
             <Activity size={15} className="animate-pulse" /> Live Operations Dashboard
@@ -280,7 +280,7 @@ export default function PublicWebsiteView({ onLogout }) {
           )}
         </section>
 
-        {/* Feature Cards - Redesigned */}
+        {/* Feature Cards */}
         <section className="max-w-7xl mx-auto px-6 py-16 space-y-12">
           <div className="text-center space-y-2">
             <h2 className="text-3xl lg:text-4xl font-black text-white">Core Capabilities</h2>
@@ -347,11 +347,11 @@ export default function PublicWebsiteView({ onLogout }) {
             <div className="flex gap-4 justify-center flex-wrap">
               <button 
                 onClick={handleBackToLogin}
-                className="bg-gradient-to-r from-[#00D4FF] to-cyan-400 text-black font-bold px-8 py-3 rounded-xl transition hover:shadow-[0_0_20px_rgba(0,212,255,0.5)] active:scale-95"
+                className="bg-gradient-to-r from-[#00D4FF] to-cyan-400 text-black font-bold px-8 py-3 rounded-xl transition hover:shadow-[0_0_20px_rgba(0,212,255,0.5)] active:scale-95 cursor-pointer"
               >
                 Get Started <ArrowRight size={16} className="inline ml-2" />
               </button>
-              <button className="border border-[#00D4FF]/60 text-[#00D4FF] font-bold px-8 py-3 rounded-xl hover:bg-[#00D4FF]/10 transition">
+              <button className="border border-[#00D4FF]/60 text-[#00D4FF] font-bold px-8 py-3 rounded-xl hover:bg-[#00D4FF]/10 transition cursor-pointer">
                 Schedule Demo
               </button>
             </div>
@@ -365,9 +365,9 @@ export default function PublicWebsiteView({ onLogout }) {
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <p>© 2026 Ali.com Pro • Enterprise Logistics Platform</p>
           <div className="flex items-center gap-4">
-            <button className="hover:text-[#00D4FF] transition">Privacy</button>
-            <button className="hover:text-[#00D4FF] transition">Terms</button>
-            <button className="hover:text-[#00D4FF] transition">Security</button>
+            <button className="hover:text-[#00D4FF] transition cursor-pointer">Privacy</button>
+            <button className="hover:text-[#00D4FF] transition cursor-pointer">Terms</button>
+            <button className="hover:text-[#00D4FF] transition cursor-pointer">Security</button>
             <span className="text-[#00D4FF]">•</span>
             <div className="flex items-center gap-1 text-slate-400">
               <Globe size={12} className="text-[#00D4FF]" /> Global Network
